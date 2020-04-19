@@ -2,6 +2,7 @@ var express = require('express');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
+const port = process.env.PORT || 8081
 var players = {};
 var lasers = {
 
@@ -72,6 +73,6 @@ io.on('connection', function (socket) {
   });
 });
 
-server.listen(8081, function () {
+server.listen(port, function () {
   console.log(`Listening on ${server.address().port}`);
 });
