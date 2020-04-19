@@ -207,7 +207,7 @@ function update() {
             }
 
             if (this.cursors.up.isDown) {
-                this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration);
+                this.physics.velocityFromRotation(this.ship.rotation + 1.5, 500, this.ship.body.acceleration);
             } else {
                 this.ship.setAcceleration(0);
             }
