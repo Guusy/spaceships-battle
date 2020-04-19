@@ -3,6 +3,9 @@ var config = {
     parent: 'phaser-example',
     width: 800,
     height: 600,
+    dom: {
+        createContainer: true
+    },
     physics: {
         default: 'arcade',
         arcade: {
@@ -18,7 +21,6 @@ var config = {
 };
 
 var game = new Phaser.Game(config);
-
 
 class ScrollingBackground {
     constructor(scene, key, velocityY) {
@@ -64,6 +66,12 @@ var fireRate = 100;
 var nextFire = 0;
 var timerShootDelay = 10
 var timerShootTick = timerShootDelay - 1
+var step = "SET_NAME"
+var playerName;
+var room;
+var time = 0;
+var gameFinished = false
+var scores;
 
 function preload() {
     this.load.image('ship', 'assets/spaceShips_001.png');
@@ -73,16 +81,15 @@ function preload() {
     this.load.image('laserEnemy', 'assets/laserEnemy.png');
     this.load.image('bg0', 'assets/sprBg0.png')
     this.load.image('bg1', 'assets/sprBg1.png')
+    this.load.html('nameform', 'assets/nameform.html');
+    this.load.spritesheet('sprExplosion', 'assets/images/sprExplosion.png', {
+        frameWidth: 32,
+        frameHeight: 32
+    })
 }
 
 function create() {
     var self = this;
-    this.socket = io();
-    this.otherPlayers = this.physics.add.group();
-    this.blueScoreText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#0000FF' });
-    this.redScoreText = this.add.text(584, 16, '', { fontSize: '32px', fill: '#FF0000' });
-    this.cursors = this.input.keyboard.createCursorKeys();
-
     this.backgrounds = []
     for (let i = 0; i < 10; i++) {
         const keys = ['bg0', 'bg1']
@@ -91,108 +98,167 @@ function create() {
         this.backgrounds.push(bg)
     }
 
-    this.lasers = this.physics.add.group({
-        key: 'lasers',
+    this.anims.create({
+        key: 'sprExplosion',
+        frames: this.anims.generateFrameNumbers('sprExplosion'),
+        frameRate: 20,
+        repeat: 0
     })
 
-    this.enemiesLasers = this.physics.add.group({
-        key: 'enemiesLasers',
-    })
+    if (step === "SET_NAME") {
+        setName(self, () => {
+            console.log("start the game")
+            this.socket = io();
+            this.otherPlayers = this.physics.add.group();
+            this.blueScoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#0000FF' });
+            this.timer = this.add.text(584, 16, "Waiting for others players", { fontSize: '32px' });
+            this.cursors = this.input.keyboard.createCursorKeys();
 
-    this.socket.on('currentPlayers', function (players) {
-        Object.keys(players).forEach(function (id) {
-            if (players[id].playerId === self.socket.id) {
-                addPlayer(self, players[id]);
-            } else {
-                addOtherPlayers(self, players[id]);
-            }
-        });
-    });
-    this.socket.on('newPlayer', function (playerInfo) {
-        addOtherPlayers(self, playerInfo);
-    });
-    this.socket.on('disconnect', function (playerId) {
-        self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-            if (playerId === otherPlayer.playerId) {
-                otherPlayer.destroy();
-            }
-        });
-    });
+            this.socket.emit('enterGame', { playerName, room })
 
+            this.lasers = this.physics.add.group({
+                key: 'lasers',
+            })
 
-    this.socket.on('playerMoved', function (playerInfo) {
-        self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-            if (playerInfo.playerId === otherPlayer.playerId) {
-                otherPlayer.setRotation(playerInfo.rotation);
-                otherPlayer.setPosition(playerInfo.x, playerInfo.y);
-            }
-        });
-    });
+            this.enemiesLasers = this.physics.add.group({
+                key: 'enemiesLasers',
+            })
 
-    this.socket.on('scoreUpdate', function (scores) {
-        self.blueScoreText.setText('Blue: ' + scores.blue);
-        self.redScoreText.setText('Red: ' + scores.red);
-    });
-
-    this.socket.on('starLocation', function (starLocation) {
-        if (self.star) self.star.destroy();
-        self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
-        self.physics.add.overlap(self.ship, self.star, function () {
-            this.socket.emit('starCollected');
-        }, null, self);
-    });
-
-    this.socket.on('playerShooted', function (laser) {
-        const isMe = laser.player === self.socket.id
-        if (!isMe) {
-            renderEnemylaser(self, laser)
-        }
-    })
+            this.socket.on('currentPlayers', function (players) {
+                Object.keys(players).forEach(function (id) {
+                    if (players[id].playerId === self.socket.id) {
+                        addPlayer(self, players[id]);
+                    } else {
+                        addOtherPlayers(self, players[id]);
+                    }
+                });
+            });
+            this.socket.on('newPlayer', function (playerInfo) {
+                addOtherPlayers(self, playerInfo);
+            });
+            this.socket.on('disconnect', function (playerId) {
+                self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+                    if (playerId === otherPlayer.playerId) {
+                        otherPlayer.destroy();
+                    }
+                });
+            });
 
 
+            this.socket.on('playerMoved', function (playerInfo) {
+                if (playerInfo.playerName === playerName) {
+                    self.ship.setRotation(playerInfo.rotation);
+                    self.ship.setPosition(playerInfo.x, playerInfo.y);
+                } else {
+                    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+                        if (playerInfo.playerId === otherPlayer.playerId) {
+                            otherPlayer.setRotation(playerInfo.rotation);
+                            otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+                        }
+                    });
+                }
+
+            });
+
+            this.socket.on('scoreUpdate', function (newScores) {
+                scores = newScores
+                self.blueScoreText.setText('Score: ' + scores[playerName]);
+            });
+
+            this.socket.on('starLocation', function (starLocation) {
+                if (self.star) self.star.destroy();
+                self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
+                console.log('wtfff', self.star)
+                self.physics.add.overlap(self.ship, self.star, function () {
+                    this.socket.emit('starCollected', connectionCredentials());
+                }, null, self);
+            });
+
+            this.socket.on('playerShooted', function (laser) {
+                const isMe = laser.player === self.socket.id
+                if (!isMe) {
+                    renderEnemylaser(self, laser)
+                }
+            })
+
+            this.socket.on('initTimmer', () => {
+                console.log('initTimmer')
+                setInterval(() => {
+                    if (!gameFinished) {
+                        time += 1
+                    }
+                }, 1000)
+            })
+
+
+        })
+    }
 }
 
 function update() {
-    if (this.ship && this.ship.scene) {
-        if (this.cursors.left.isDown) {
-            this.ship.setAngularVelocity(-150);
-        } else if (this.cursors.right.isDown) {
-            this.ship.setAngularVelocity(150);
-        } else {
-            this.ship.setAngularVelocity(0);
-        }
-
-        if (this.cursors.up.isDown) {
-            this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration);
-        } else {
-            this.ship.setAcceleration(0);
-        }
-
-        if (this.cursors.space.isDown) {
-            if (timerShootTick < timerShootDelay) {
-                timerShootTick += 1
+    if (step !== "SET_NAME") {
+        if (this.ship && this.ship.scene) {
+            if (this.cursors.left.isDown) {
+                this.ship.setAngularVelocity(-150);
+            } else if (this.cursors.right.isDown) {
+                this.ship.setAngularVelocity(150);
             } else {
-                renderLaser(this, this.ship, this.lasers, 'laser')
-                this.socket.emit('shoot', { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation });
-                timerShootTick = 0
+                this.ship.setAngularVelocity(0);
             }
+
+            if (this.cursors.up.isDown) {
+                this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration);
+            } else {
+                this.ship.setAcceleration(0);
+            }
+
+            if (this.cursors.space.isDown) {
+                if (timerShootTick < timerShootDelay) {
+                    timerShootTick += 1
+                } else {
+                    renderLaser(this, this.ship, this.lasers, 'laser')
+                    this.socket.emit('shoot', { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation, ...connectionCredentials() });
+                    timerShootTick = 0
+                }
+            }
+
+            // emit player movement
+            var x = this.ship.x;
+            var y = this.ship.y;
+            var r = this.ship.rotation;
+            if (this.ship.oldPosition && (x !== this.ship.oldPosition.x || y !== this.ship.oldPosition.y || r !== this.ship.oldPosition.rotation)) {
+                this.socket.emit('playerMovement', { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation, ...connectionCredentials() });
+            }
+
+            // save old position data
+            this.ship.oldPosition = {
+                x: this.ship.x,
+                y: this.ship.y,
+                rotation: this.ship.rotation,
+                playerName
+            };
         }
 
-        // emit player movement
-        var x = this.ship.x;
-        var y = this.ship.y;
-        var r = this.ship.rotation;
-        if (this.ship.oldPosition && (x !== this.ship.oldPosition.x || y !== this.ship.oldPosition.y || r !== this.ship.oldPosition.rotation)) {
-            this.socket.emit('playerMovement', { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation });
-        }
+        this.timer.setText('Time:' + time / 60);
 
-        // save old position data
-        this.ship.oldPosition = {
-            x: this.ship.x,
-            y: this.ship.y,
-            rotation: this.ship.rotation
-        };
+        if (time === 120 && !gameFinished) {
+            gameFinished = true
+            this.physics.pause()
+            const sortedScoresKey = Object.keys(scores).sort((a, b) => scores[b] - scores[a])
+            const x = self.game.config.width * 0.3
+            const y = self.game.config.height * 0.3
+            const [winner, ...otherPlayers] = sortedScoresKey
+            this.add.text(x, y, 'Game finished', { fontSize: '32px', fill: 'white' });
+            let scoreBoardLinePosition = y + 32
+            this.add.text(x, scoreBoardLinePosition, 'Winner => ' + winner, { fontSize: '28px', fill: 'white' });
+
+            sortedScoresKey.forEach(player => {
+                scoreBoardLinePosition += 32
+                this.add.text(x, scoreBoardLinePosition, player + ': ' + scores[player], { fontSize: '24px', fill: 'white' });
+            })
+        }
     }
+
 
     for (var i = 0; i < this.backgrounds.length; i++) {
         this.backgrounds[i].update()
@@ -200,13 +266,44 @@ function update() {
 }
 
 
-function renderEnemylaser(self, ship) {
-    renderLaser(self, ship, self.enemiesLasers, 'laserEnemy')
+
+// Set name
+function setName(self, initGame) {
+    var element = self.add.dom(self.game.config.width * 0.5, 0).createFromCache('nameform');
+
+    element.addListener('click');
+    element.on('click', function (event) {
+        if (event.target.name === 'playButton') {
+            var playerValue = this.getChildByName('nameField').value;
+            var roomValue = this.getChildByName('roomField').value;
+            if (playerValue !== '' && roomValue !== '') {
+                //  Hide the login element
+                this.setVisible(false);
+
+                playerName = playerValue
+                room = roomValue
+                step = "PLAYING_GAME"
+                initGame()
+            }
+        }
+    })
+    self.tweens.add({
+        targets: element,
+        y: 300,
+        duration: 3000,
+        ease: 'Power3'
+    });
+}
+
+// Game functions
+function renderEnemylaser(self, laser) {
+    renderLaser(self, laser, self.enemiesLasers, 'laserEnemy')
 }
 
 function renderLaser(self, ship, laserGroup, sprite) {
     var laser = laserGroup.create(ship.x, ship.y, sprite);
     laser.rotation = ship.rotation
+    laser.setData('playerName', ship.playerName)
     self.physics.velocityFromRotation(ship.rotation + 1.5, 600, laser.body.acceleration);
 }
 
@@ -216,7 +313,7 @@ function addPlayer(self, playerInfo) {
     self.ship.setAngularDrag(100);
     self.ship.setMaxVelocity(200);
     self.ship.setCollideWorldBounds(true)
-    self.physics.add.collider(self.ship, self.enemiesLasers, hitByLaser, null, self);
+    self.physics.add.overlap(self.ship, self.enemiesLasers, hitByLaser, null, self);
 }
 
 function addOtherPlayers(self, playerInfo) {
@@ -227,16 +324,16 @@ function addOtherPlayers(self, playerInfo) {
     self.otherPlayers.add(otherPlayer);
 }
 
-function hitByLaser(player, laser) {
-    console.log('hited')
-    this.physics.pause();
-    player.destroy()
+function hitByLaser(player, laser, self) {
+    console.log('hited', this)
+    this.socket.emit('killed', { killer: laser.getData('playerName'), ...connectionCredentials() })
     laser.destroy()
-    // this.physics.pause();
+}
 
-    // player.setTint(0xff0000);
 
-    // player.anims.play('turn');
-
-    // gameOver = true;
+function connectionCredentials() {
+    return {
+        playerName,
+        room
+    }
 }
