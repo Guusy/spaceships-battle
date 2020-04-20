@@ -2,7 +2,7 @@ var express = require('express');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
-const { removePlayer } = require('./utils')
+const { removePlayer, randomIntFromInterval } = require('./utils')
 const port = process.env.PORT || 8081
 var players = {};
 var lasers = {
@@ -33,10 +33,11 @@ io.on('connection', function (socket) {
   console.log('a user connected');
 
   // User create a game 
-  socket.on('createGame', ({ room, quantityPlayers, time }) => {
+  socket.on('createGame', ({ room, quantityPlayers, time, width }) => {
     rooms[room] = {
       quantityPlayers: Number.parseInt(quantityPlayers, 10),
-      time: Number.parseFloat(time, 10) * 60000
+      time: Number.parseFloat(time, 10) * 60000,
+      width
     }
   })
 
@@ -78,8 +79,24 @@ io.on('connection', function (socket) {
 
       console.log('The game will finish in', time)
       // Calculate the finish of the game
+
+      rooms[room].meteorInterval = setInterval(() => {
+        if (randomIntFromInterval(0, 10) >= 3) {
+          const meteor = {
+            id: '_' + Math.random().toString(36).substr(2, 9),
+            x: randomIntFromInterval(0, roomData.width),
+            y: 0,
+            scale: (randomIntFromInterval(10, 20) * 0.1),
+            velocity: randomIntFromInterval(50, 100)
+          }
+          console.log('render meteor', meteor)
+          io.in(room).emit('renderMeteor', meteor)
+        }
+      }, 2000)
+
       setTimeout(() => {
         io.in(room).emit('finishGame');
+        clearInterval(rooms[room].meteorInterval)
         delete rooms[room]
         scores = {}
       }, time)
@@ -89,6 +106,10 @@ io.on('connection', function (socket) {
         io.in(room).emit('starLocation', createStar());
       }, 3000)
     }
+  })
+
+  socket.on('meteorDestroyed', ({ id, room }) => {
+    io.in(room).emit('meteorDestroyed', id)
   })
 
   socket.on('playerMovement', function ({ x, y, rotation, playerName, room }) {
@@ -114,7 +135,9 @@ io.on('connection', function (socket) {
   });
 
   socket.on('killed', function ({ killer, playerName, room }) {
-    scores[killer] += 20
+    if(killer){
+      scores[killer] += 20
+    }
     const newScore = scores[playerName] - 20
     scores[playerName] = (newScore >= 0) ? newScore : 0
     players[room][playerName].x = Math.floor(Math.random() * 700) + 50
@@ -132,6 +155,7 @@ io.on('connection', function (socket) {
     // TODO: find in sockets
     removePlayer(players, scores, socket.id)
     console.log('current players', players, scores);
+    // TODO: Check if a room is empty to clear the interval
     // emit a message to all players to remove this player
     io.emit('disconnect', socket.id);
   });

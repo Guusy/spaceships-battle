@@ -2,13 +2,12 @@ const ratio = Math.max(window.innerWidth / window.innerHeight, window.innerHeigh
 const DEFAULT_HEIGHT = 720 // any height you want
 const DEFAULT_WIDTH = ratio * DEFAULT_HEIGHT
 
-
 var config = {
     type: Phaser.AUTO,
     parent: 'phaser-example',
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: DEFAULT_WIDTH,
+    width: 1000,
     height: DEFAULT_HEIGHT,
     dom: {
         createContainer: true
@@ -108,6 +107,7 @@ function preload() {
     this.load.image('laserEnemy', 'assets/laserEnemy.png');
     this.load.image('bg0', 'assets/sprBg0.png')
     this.load.image('bg1', 'assets/sprBg1.png')
+    this.load.image('meteor', 'assets/meteorGrey_small1.png')
     this.load.html('nameform', 'assets/nameform.html');
     this.load.html('createGame', 'assets/createGame.html');
     this.load.html('menu', 'assets/menu.html');
@@ -147,13 +147,19 @@ function create() {
 
         this.socket.emit('enterGame', { playerName, room })
 
-        this.lasers = this.physics.add.group({
-            key: 'lasers',
-        })
+        this.lasers = this.physics.add.group()
+        this.enemiesLasers = this.physics.add.group()
+        this.meteors = this.physics.add.group()
 
-        this.enemiesLasers = this.physics.add.group({
-            key: 'enemiesLasers',
-        })
+        self.physics.add.overlap(self.lasers, self.meteors, laserHitMeteor, null, self)
+
+        this.socket.on('renderMeteor', ({ id ,x, y, scale, velocity } ) => {
+            meteor = this.meteors.create(x, y, 'meteor')
+            meteor.setScale(scale)
+            this.meteors.add(meteor)
+            meteor.setData('id', id)
+            meteor.body.velocity.y = velocity
+        });
 
         this.socket.on('currentPlayers', function (players) {
             Object.keys(players).forEach(function (id) {
@@ -206,8 +212,8 @@ function create() {
         this.socket.on('starLocation', function (starLocation) {
             if (self.star) self.star.destroy();
             self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
-            console.log('wtfff', self.star)
             self.physics.add.overlap(self.ship, self.star, function () {
+                // TODO: change the logic to put a conditional
                 this.socket.emit('starCollected', connectionCredentials());
             }, null, self);
         });
@@ -229,6 +235,14 @@ function create() {
 
         this.socket.on('finishGame', () => {
             gameFinished = true
+        })
+
+        this.socket.on('meteorDestroyed', (id) => {
+            self.meteors.getChildren().forEach((meteor) => {
+                if (meteor.getData('id') === id) {
+                    meteor.destroy()
+                }
+            })
         })
 
     }
@@ -338,6 +352,8 @@ function addPlayer(self, playerInfo) {
     self.ship.setAngularDrag(100);
     self.ship.setMaxVelocity(200);
     self.ship.setCollideWorldBounds(true)
+
+    self.physics.add.overlap(self.ship, self.meteors, hitByMeteor, null, self)
     self.physics.add.overlap(self.ship, self.enemiesLasers, hitByLaser, null, self);
 }
 
@@ -355,6 +371,25 @@ function hitByLaser(player, laser, self) {
     laser.destroy()
 }
 
+function hitByMeteor(player, meteor, self) {
+    // this.socket.emit('killed', { killer: laser.getData('playerName'), ...connectionCredentials() })
+    if (!meteor.getData('isHited')) {
+        meteor.setData('isHited', true)
+        this.socket.emit('killed', { killer: null, ...connectionCredentials() })
+        this.socket.emit('meteorDestroyed', { id: meteor.getData('id'), ...connectionCredentials() })
+    }
+    // meteor.destroy()
+}
+
+function laserHitMeteor(laser, meteor) {
+
+    if (!meteor.getData('isHited')) {
+        meteor.setData('isHited', true)
+        this.socket.emit('meteorDestroyed', { id: meteor.getData('id'), ...connectionCredentials() })
+    }
+    // meteor.destroy()
+    // laser.destroy()
+}
 
 function connectionCredentials() {
     return {

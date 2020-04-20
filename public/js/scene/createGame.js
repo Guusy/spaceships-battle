@@ -10,7 +10,7 @@ window.createGame = (self, nextStep) => () => {
             var time = this.getChildByName('timeField').value;
             if (playerName !== '' && room !== '' && quantityPlayers !== '' && time !== '') {
                 this.setVisible(false);
-                self.socket.emit('createGame', { room, quantityPlayers, time })
+                self.socket.emit('createGame', { room, quantityPlayers, time, width: Number.parseInt(self.game.config.width, 10) })
                 nextStep({ playerName, room })
             }
         }
