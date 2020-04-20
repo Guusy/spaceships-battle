@@ -12,11 +12,11 @@ var star = {
   x: Math.floor(Math.random() * 700) + 50,
   y: Math.floor(Math.random() * 500) + 50
 };
-var scores = {
-  // 'test3': 5,
-  // 'test': 30,
-  // 'test2': 10
-};
+var scores = {};
+
+const rooms = {
+
+}
 
 app.use(express.static(__dirname + '/public'));
 
@@ -32,9 +32,18 @@ const createStar = () => ({
 io.on('connection', function (socket) {
   console.log('a user connected');
 
+  // User create a game 
+  socket.on('createGame', ({ room, quantityPlayers, time }) => {
+    rooms[room] = {
+      quantityPlayers: Number.parseInt(quantityPlayers, 10),
+      time: Number.parseFloat(time, 10) * 60000
+    }
+  })
+
   // User enter into the game
   socket.on('enterGame', ({ playerName, room }) => {
     // create a new player and add it to our players object
+    console.log("EnterGame", playerName, room, 'room', rooms, 'currentPlayers', players)
     players[room] = players[room] ? players[room] : {}
     players[room][playerName] = {
       socketId: socket.id,
@@ -53,15 +62,29 @@ io.on('connection', function (socket) {
     // send the players object to the new player
     socket.emit('currentPlayers', roomPlayers);
 
-    // send the current scores
-    socket.emit('scoreUpdate', scores);
     // update all other players of the new player
     socket.in(room).emit('newPlayer', roomPlayers[playerName]);
+    const roomData = rooms[room]
+    const quantityPlayers = roomData.quantityPlayers
+    const currentPlayers = Object.keys(roomPlayers).length
 
-    if (Object.keys(roomPlayers).length === 2) {
-      io.in(room).emit('initTimmer');
+    if (currentPlayers === quantityPlayers) {
+      const time = roomData.time
+      // Send to the users the real time, to manage in the client
+      io.in(room).emit('initTimmer', { time });
+
+      // send the current scores
+      io.in(room).emit('scoreUpdate', scores);
+
+      console.log('The game will finish in', time)
+      // Calculate the finish of the game
+      setTimeout(() => {
+        io.in(room).emit('finishGame');
+        delete rooms[room]
+        scores = {}
+      }, time)
+
       // send the star object to the new player
-
       setTimeout(() => {
         io.in(room).emit('starLocation', createStar());
       }, 3000)
