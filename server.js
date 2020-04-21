@@ -71,7 +71,7 @@ io.on('connection', function (socket) {
       const roomData = rooms[room]
       const time = roomData.time
       // Send to the users the real time, to manage in the client
-      io.in(room).emit('initTimmer', { time });
+      io.in(room).emit('initTimmer', time);
 
       // send the current scores
       io.in(room).emit('scoreUpdate', scores);

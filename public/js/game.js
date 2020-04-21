@@ -222,10 +222,11 @@ function create() {
             }
         })
 
-        this.socket.on('initTimmer', () => {
+        this.socket.on('initTimmer', (starterTime) => {
+            time = starterTime / 1000
             setInterval(() => {
                 if (!gameFinished) {
-                    time += 1
+                    time -= 1
                 }
             }, 1000)
         })
@@ -282,7 +283,7 @@ function update() {
                 this.ship.setAcceleration(0);
             }
 
-            if (this.cursors.space.isDown) {
+            if (this.cursors.space.isDown && this.ship.getData('canShoot')) {
                 if (timerShootTick < timerShootDelay) {
                     timerShootTick += 1
                 } else {
@@ -368,6 +369,7 @@ function addPlayer(self, playerInfo) {
     self.ship.setMaxVelocity(200);
     self.ship.setCollideWorldBounds(true)
     self.ship.setData('playerName', playerInfo.playerName)
+    self.ship.setData('canShoot', false)
 
     if (self.star) {
         self.physics.add.overlap(self.ship, self.star, collectStar, null, self);
@@ -376,9 +378,10 @@ function addPlayer(self, playerInfo) {
 
     setTimeout(() => {
         self.ship.clearTint()
+        self.ship.setData('canShoot', true)
         self.physics.add.overlap(self.ship, self.meteors, hitByMeteor, null, self)
         self.physics.add.overlap(self.ship, self.enemiesLasers, hitByLaser, null, self);
-    }, 2000)
+    }, 3000)
 
 }
 
