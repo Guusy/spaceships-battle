@@ -1,0 +1,25 @@
+- Configuracion de la partida, cantidad de tiempo, cantidad de jugadores. V
+- Que aparezca los scores todo el tiempo de todos los players. V
+- Agregar diferentes tipos de nave, al principio random, despues a seleccionar y autos locos para acho o un barco
+- Diferentes tipos de disparos.
+- Que tengan una habilidad especial.
+- Que aperezcan meteoritios los ultimos 30 segundos.
+- Agrandar el mapa. V
+- Que onda con la estrella pai.
+- Chequear el derrape.
+
+- Resize de pantalla
+
+- Power ups por el mapa
+
+- sonidos, musica
+
+- cada x cantidad de estrella ganar poderes
+
+- Agregar nombres en las naves
+
+- Quien mato a quien corte detamtch de cs go
+
+- Barras de vida a las naves ( arriba nombre  y abajo barrita de vida) (3 estados)
+
+- Choque entre naves

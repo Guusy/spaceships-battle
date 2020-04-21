@@ -23,6 +23,9 @@ var config = {
         preload: preload,
         create: create,
         update: update
+    },
+    audio: {
+        disableWebAudio: true
     }
 };
 
@@ -115,12 +118,15 @@ function preload() {
         frameWidth: 32,
         frameHeight: 32
     })
+    this.load.audio('laserSound', 'assets/audio/laser.ogg', {
+        instances: 1
+    });
 }
 
 function create() {
     var self = this;
     this.socket = io();
-    
+    this.sound.add('laserSound');
     this.anims.create({
         key: 'sprExplosion',
         frames: this.anims.generateFrameNumbers('sprExplosion'),
@@ -209,6 +215,7 @@ function create() {
         });
 
         this.socket.on('playerShooted', function (laser) {
+            self.sound.play('laserSound');
             const isMe = laser.player === self.socket.id
             if (!isMe) {
                 renderEnemylaser(self, laser)
@@ -279,6 +286,7 @@ function update() {
                 if (timerShootTick < timerShootDelay) {
                     timerShootTick += 1
                 } else {
+                    this.sound.play('laserSound');
                     renderLaser(this, this.ship, this.lasers, 0x8feb34)
                     this.socket.emit('shoot', { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation, ...connectionCredentials() });
                     timerShootTick = 0
