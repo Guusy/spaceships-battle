@@ -422,8 +422,9 @@ function laserHitMeteor(laser, meteor) {
     }
 }
 
-function collectStar() {
+function collectStar(ship, star) {
     // TODO: change the logic to put a conditional
+    star.destroy()
     this.socket.emit('starCollected', connectionCredentials());
 }
 function connectionCredentials() {
