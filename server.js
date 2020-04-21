@@ -2,7 +2,7 @@ var express = require('express');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
-const { removePlayer, randomIntFromInterval } = require('./utils')
+const { removePlayer, randomIntFromInterval, allPlayersAreInTheRoom } = require('./utils')
 const port = process.env.PORT || 8081
 var players = {};
 var lasers = {
@@ -65,11 +65,10 @@ io.on('connection', function (socket) {
 
     // update all other players of the new player
     socket.in(room).emit('newPlayer', roomPlayers[playerName]);
-    const roomData = rooms[room]
-    const quantityPlayers = roomData.quantityPlayers
-    const currentPlayers = Object.keys(roomPlayers).length
 
-    if (currentPlayers === quantityPlayers) {
+    const gameIsReady = allPlayersAreInTheRoom({ players, rooms, room })
+    if (gameIsReady) {
+      const roomData = rooms[room]
       const time = roomData.time
       // Send to the users the real time, to manage in the client
       io.in(room).emit('initTimmer', { time });
@@ -95,6 +94,7 @@ io.on('connection', function (socket) {
       }, 2000)
 
       setTimeout(() => {
+        console.log("We gonna finish the game")
         io.in(room).emit('finishGame');
         clearInterval(rooms[room].meteorInterval)
         delete rooms[room]
@@ -109,7 +109,7 @@ io.on('connection', function (socket) {
   })
 
   socket.on('meteorDestroyed', ({ id, room }) => {
-    io.in(room).emit('meteorDestroyed', id)
+    socket.to(room).emit('meteorDestroyed', id)
   })
 
   socket.on('playerMovement', function ({ x, y, rotation, playerName, room }) {
@@ -135,15 +135,20 @@ io.on('connection', function (socket) {
   });
 
   socket.on('killed', function ({ killer, playerName, room }) {
-    if(killer){
+    if (killer) {
       scores[killer] += 20
     }
+
+    socket.to(room).emit('removePlayer', playerName)
+
     const newScore = scores[playerName] - 20
     scores[playerName] = (newScore >= 0) ? newScore : 0
     players[room][playerName].x = Math.floor(Math.random() * 700) + 50
     players[room][playerName].y = Math.floor(Math.random() * 500) + 50
     io.emit('scoreUpdate', scores);
-    io.in(room).emit('playerMoved', players[room][playerName]);
+    setTimeout(() => {
+      io.in(room).emit('revivePlayer', players[room][playerName]);
+    }, 1500)
   });
 
 
@@ -154,6 +159,8 @@ io.on('connection', function (socket) {
     // remove this player from our players object
     // TODO: find in sockets
     removePlayer(players, scores, socket.id)
+   // const gameIsReady = allPlayersAreInTheRoom({ players, rooms, room })
+
     console.log('current players', players, scores);
     // TODO: Check if a room is empty to clear the interval
     // emit a message to all players to remove this player

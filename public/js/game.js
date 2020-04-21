@@ -120,20 +120,14 @@ function preload() {
 function create() {
     var self = this;
     this.socket = io();
-    // this.backgrounds = []
-    // for (let i = 0; i < 10; i++) {
-    //     const keys = ['bg0', 'bg1']
-    //     const key = keys[Phaser.Math.Between(0, keys.length - 1)]
-    //     const bg = new ScrollingBackground(this, key, i * 10)
-    //     this.backgrounds.push(bg)
-    // }
-
+    
     this.anims.create({
         key: 'sprExplosion',
         frames: this.anims.generateFrameNumbers('sprExplosion'),
         frameRate: 20,
         repeat: 0
     })
+
 
     const game = (props) => {
         playerName = props.playerName
@@ -153,7 +147,7 @@ function create() {
 
         self.physics.add.overlap(self.lasers, self.meteors, laserHitMeteor, null, self)
 
-        this.socket.on('renderMeteor', ({ id ,x, y, scale, velocity } ) => {
+        this.socket.on('renderMeteor', ({ id, x, y, scale, velocity }) => {
             meteor = this.meteors.create(x, y, 'meteor')
             meteor.setScale(scale)
             this.meteors.add(meteor)
@@ -183,17 +177,12 @@ function create() {
 
 
         this.socket.on('playerMoved', function (playerInfo) {
-            if (playerInfo.playerName === playerName) {
-                self.ship.setRotation(playerInfo.rotation);
-                self.ship.setPosition(playerInfo.x, playerInfo.y);
-            } else {
-                self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-                    if (playerInfo.playerId === otherPlayer.playerId) {
-                        otherPlayer.setRotation(playerInfo.rotation);
-                        otherPlayer.setPosition(playerInfo.x, playerInfo.y);
-                    }
-                });
-            }
+            self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+                if (playerInfo.playerId === otherPlayer.playerId) {
+                    otherPlayer.setRotation(playerInfo.rotation);
+                    otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+                }
+            });
 
         });
 
@@ -212,10 +201,11 @@ function create() {
         this.socket.on('starLocation', function (starLocation) {
             if (self.star) self.star.destroy();
             self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
-            self.physics.add.overlap(self.ship, self.star, function () {
-                // TODO: change the logic to put a conditional
-                this.socket.emit('starCollected', connectionCredentials());
-            }, null, self);
+            self.star.setTint(0x737373)
+            setTimeout(() => {
+                self.star.clearTint()
+                self.physics.add.overlap(self.ship, self.star, collectStar, null, self);
+            }, 3000)
         });
 
         this.socket.on('playerShooted', function (laser) {
@@ -245,6 +235,23 @@ function create() {
             })
         })
 
+        this.socket.on('removePlayer', (playerName) => {
+            console.log('removePlayer', playerName)
+            self.otherPlayers.getChildren().forEach((otherPlayer) => {
+                if (playerName === otherPlayer.getData('playerName')) {
+                    destroyPlayer(this, otherPlayer)
+                }
+            });
+        })
+
+        this.socket.on('revivePlayer', (playerInfo) => {
+            const isMe = playerInfo.playerName === playerName
+            if (isMe) {
+                addPlayer(self, playerInfo);
+            } else {
+                addOtherPlayers(self, playerInfo);
+            }
+        })
     }
 
     menu(self, { joinGame: joinGame(self, game), createGame: createGame(self, game) })
@@ -347,53 +354,84 @@ function renderLaser(self, ship, laserGroup, color) {
 }
 
 function addPlayer(self, playerInfo) {
-    self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(53, 40);
+    self.ship = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(53, 40);
     self.ship.setDrag(100);
     self.ship.setAngularDrag(100);
     self.ship.setMaxVelocity(200);
     self.ship.setCollideWorldBounds(true)
+    self.ship.setData('playerName', playerInfo.playerName)
 
-    self.physics.add.overlap(self.ship, self.meteors, hitByMeteor, null, self)
-    self.physics.add.overlap(self.ship, self.enemiesLasers, hitByLaser, null, self);
+    if (self.star) {
+        self.physics.add.overlap(self.ship, self.star, collectStar, null, self);
+    }
+    self.ship.setTint(0x737373)
+
+    setTimeout(() => {
+        self.ship.clearTint()
+        self.physics.add.overlap(self.ship, self.meteors, hitByMeteor, null, self)
+        self.physics.add.overlap(self.ship, self.enemiesLasers, hitByLaser, null, self);
+    }, 2000)
+
 }
 
 function addOtherPlayers(self, playerInfo) {
     const otherPlayer = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'otherPlayer').setOrigin(0.5, 0.5).setDisplaySize(53, 40);
     otherPlayer.setTint(0xff0000);
     otherPlayer.playerId = playerInfo.playerId;
+    otherPlayer.setData('playerName', playerInfo.playerName)
     otherPlayer.setCollideWorldBounds(true)
     self.otherPlayers.add(otherPlayer);
+    otherPlayer.setTint(0x737373)
+
+    setTimeout(() => {
+        otherPlayer.setTint(0xff0000);
+    }, 2000)
 }
 
-function hitByLaser(player, laser, self) {
-    console.log('hited', this)
+function hitByLaser(player, laser) {
+    destroyPlayer(this, player)
     this.socket.emit('killed', { killer: laser.getData('playerName'), ...connectionCredentials() })
     laser.destroy()
 }
 
-function hitByMeteor(player, meteor, self) {
-    // this.socket.emit('killed', { killer: laser.getData('playerName'), ...connectionCredentials() })
+function hitByMeteor(player, meteor) {
+    destroyPlayer(this, player)
+    meteor.destroy()
+
     if (!meteor.getData('isHited')) {
-        meteor.setData('isHited', true)
         this.socket.emit('killed', { killer: null, ...connectionCredentials() })
         this.socket.emit('meteorDestroyed', { id: meteor.getData('id'), ...connectionCredentials() })
+        meteor.setData('isHited', true)
     }
-    // meteor.destroy()
+
 }
 
 function laserHitMeteor(laser, meteor) {
-
+    meteor.destroy()
     if (!meteor.getData('isHited')) {
         meteor.setData('isHited', true)
         this.socket.emit('meteorDestroyed', { id: meteor.getData('id'), ...connectionCredentials() })
     }
-    // meteor.destroy()
-    // laser.destroy()
 }
 
+function collectStar() {
+    // TODO: change the logic to put a conditional
+    this.socket.emit('starCollected', connectionCredentials());
+}
 function connectionCredentials() {
     return {
         playerName,
         room
     }
+}
+
+
+// Player functionaniltiies 
+
+function destroyPlayer(self, player) {
+    const animation = self.physics.add.sprite(player.x, player.y, 'ship')
+    animation.setTexture('sprExplosion')
+    animation.setScale(2.5, 2.5)
+    animation.play('sprExplosion')
+    player.destroy()
 }
