@@ -285,6 +285,7 @@ function update() {
                     const text = scoresTexts[index]
                     if (text) {
                         text.setText(`${index + 1}.${aPlayer.playerName} : ${aPlayer.score}`)
+                        text.setColor(`#${aPlayer.color}`)
                     }
                 })
                 needToUpdateTheScores = false
