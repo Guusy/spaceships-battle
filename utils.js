@@ -8,13 +8,12 @@ const _findBySocket = ({ players, socketId, callback }) => {
         })
     })
 }
-const removePlayer = (players, scores, socketId) => {
+const removePlayer = (players, socketId) => {
     Object.keys(players).forEach(room => {
         const roomData = players[room]
         Object.keys(roomData).forEach(player => {
             if (roomData[player].socketId === socketId) {
                 delete players[room][player]
-                delete scores[player]
                 console.log('we found it')
             }
         })

@@ -42,52 +42,9 @@ function formatMinutes(time) {
     return ret;
 }
 
+const sortPlayerByScore = (players) => players.sort((playerA, playerB) => playerB.score - playerA.score)
 
 var game = new Phaser.Game(config);
-class ScrollingBackground {
-    constructor(scene, key, velocityY) {
-        this.scene = scene
-        this.key = key
-        this.velocityY = velocityY
-
-        this.layers = this.scene.add.group()
-
-        this.createLayers()
-    }
-
-    createLayers() {
-        for (let i = 0; i < 2; i++) {
-            // creating two backgrounds will allow a continuous flow giving the illusion that they are moving.
-            const width = this.scene.cameras.main.width
-            const height = this.scene.cameras.main.height
-            let layer = this.scene.add.sprite(width / 2, height / 2, this.key)
-            let scaleX = width / layer.width
-            let scaleY = height / layer.height
-            let scale = Math.max(scaleX, scaleY)
-            layer.setScale(scale).setScrollFactor(0)
-            layer.y = layer.displayHeight * i
-            const flipX = Phaser.Math.Between(0, 10) >= 5 ? -1 : 1
-            const flipY = Phaser.Math.Between(0, 10) >= 5 ? -1 : 1
-            layer.setScale(flipX * 2, flipY * 2)
-            layer.setDepth(-5 - (i - 1))
-            this.scene.physics.world.enableBody(layer, 0)
-            layer.body.velocity.y = this.velocityY
-
-            this.layers.add(layer)
-        }
-    }
-
-    update() {
-        if (this.layers.getChildren()[0].y > 0) {
-            for (let i = 0; i < this.layers.getChildren().length; i++) {
-                const layer = this.layers.getChildren()[i]
-                layer.y = -layer.displayHeight + layer.displayHeight * i
-            }
-        }
-    }
-}
-
-
 var laser
 var bullets;
 var fireRate = 100;
@@ -101,7 +58,10 @@ var time = 0;
 var gameFinished = false
 var scores;
 var scoresTexts;
+var needToUpdateTheScores = false
+const player = {
 
+}
 function preload() {
     this.load.image('ship', 'assets/spaceShips_001.png');
     this.load.image('otherPlayer', 'assets/enemyBlack5.png');
@@ -138,6 +98,8 @@ function create() {
     const game = (props) => {
         playerName = props.playerName
         room = props.room
+        player.playerName = playerName
+        player.room = room
         step = "PLAYING_GAME"
         console.log("start the game")
 
@@ -194,12 +156,18 @@ function create() {
 
         this.socket.on('scoreUpdate', function (newScores) {
             scores = newScores
+            console.log('wtf?', scores)
+            needToUpdateTheScores = true
             if (!scoresTexts) {
-                scoresTexts = {}
+                scoresTexts = []
                 let scorePosition = 32
-                Object.keys(scores).forEach(player => {
-                    scoresTexts[player] = self.add.text(64, scorePosition, player + ': ' + scores[player], { fontSize: '18px', fill: '#0000FF' });
+
+                scoresTexts = scores.map(aPlayer => {
                     scorePosition += 16
+                    return self.add.text(64,
+                        scorePosition,
+                        aPlayer.playerName + ': ' + aPlayer.score,
+                        { fontSize: '18px', fill: `#${aPlayer.color}` });
                 })
             }
         });
@@ -261,7 +229,7 @@ function create() {
             }
         })
     }
-
+    // game({ playerName: 'gonzalo', room: 'debug' }) // debug mode
     menu(self, { joinGame: joinGame(self, game), createGame: createGame(self, game) })
 
 }
@@ -288,8 +256,9 @@ function update() {
                     timerShootTick += 1
                 } else {
                     this.sound.play('laserSound');
-                    renderLaser(this, this.ship, this.lasers, 0x8feb34)
-                    this.socket.emit('shoot', { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation, ...connectionCredentials() });
+                    const color = `0x${player.data.color}`
+                    renderLaser(this, player.ship, this.lasers, color)
+                    this.socket.emit('shoot', { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation, color, ...connectionCredentials() });
                     timerShootTick = 0
                 }
             }
@@ -310,48 +279,44 @@ function update() {
                 playerName
             };
 
-            if (scores) {
-                const sortedScoresKey = Object.keys(scores).sort((a, b) => scores[b] - scores[a])
-                sortedScoresKey.forEach(player => {
-                    if (scoresTexts[player]) {
-                        scoresTexts[player].setText(player + ': ' + scores[player])
+            if (scores && needToUpdateTheScores) {
+                const sortedPlayers = sortPlayerByScore(scores)
+                sortedPlayers.forEach((aPlayer, index) => {
+                    const text = scoresTexts[index]
+                    if (text) {
+                        text.setText(`${index + 1}.${aPlayer.playerName} : ${aPlayer.score}`)
                     }
                 })
+                needToUpdateTheScores = false
             }
         }
-
-
 
         if (gameFinished) {
             gameFinished = false
             this.physics.pause()
-            const sortedScoresKey = Object.keys(scores).sort((a, b) => scores[b] - scores[a])
+            const sortedPlayers = sortPlayerByScore(scores)
             const x = self.game.config.width * 0.3
             const y = self.game.config.height * 0.3
-            const [winner, ...otherPlayers] = sortedScoresKey
+            const [winner] = sortedPlayers
             this.add.text(x, y, 'Game finished', { fontSize: '32px', fill: 'white' });
             let scoreBoardLinePosition = y + 32
-            this.add.text(x, scoreBoardLinePosition, 'Winner => ' + winner, { fontSize: '28px', fill: 'white' });
+            this.add.text(x, scoreBoardLinePosition, 'Winner => ' + winner.playerName, { fontSize: '28px', fill: 'white' });
 
-            sortedScoresKey.forEach(player => {
+            sortedPlayers.forEach(aPlayer => {
                 scoreBoardLinePosition += 32
-                this.add.text(x, scoreBoardLinePosition, player + ': ' + scores[player], { fontSize: '24px', fill: 'white' });
+                this.add.text(x, scoreBoardLinePosition, aPlayer.playerName + ': ' + aPlayer.score, { fontSize: '24px', fill: 'white' });
             })
         } else {
             this.timer.setText('Time:' + formatMinutes(time));
         }
     }
 
-
-    // for (var i = 0; i < this.backgrounds.length; i++) {
-    //     this.backgrounds[i].update()
-    // }
 }
 
 
 // Game functions
 function renderEnemylaser(self, laser) {
-    renderLaser(self, laser, self.enemiesLasers, 0xde2323)
+    renderLaser(self, laser, self.enemiesLasers, laser.color)
 }
 
 function renderLaser(self, ship, laserGroup, color) {
@@ -370,18 +335,22 @@ function addPlayer(self, playerInfo) {
     self.ship.setCollideWorldBounds(true)
     self.ship.setData('playerName', playerInfo.playerName)
     self.ship.setData('canShoot', false)
+    self.ship.setTint(0x737373)
 
     if (self.star) {
         self.physics.add.overlap(self.ship, self.star, collectStar, null, self);
     }
-    self.ship.setTint(0x737373)
-
+    player.data = { ...playerInfo }
+    player.canShoot = false
+    player.ship = self.ship
     setTimeout(() => {
-        self.ship.clearTint()
-        self.ship.setData('canShoot', true)
-        self.physics.add.overlap(self.ship, self.meteors, hitByMeteor, null, self)
-        self.physics.add.overlap(self.ship, self.enemiesLasers, hitByLaser, null, self);
-    }, 3000)
+        player.ship.clearTint()
+        player.ship.setTint(`0x${playerInfo.color}`)
+        player.ship.setData('canShoot', true)
+
+        self.physics.add.overlap(player.ship, self.meteors, hitByMeteor, null, self)
+        self.physics.add.overlap(player.ship, self.enemiesLasers, hitByLaser, null, self);
+    }, 2500)
 
 }
 
@@ -395,7 +364,7 @@ function addOtherPlayers(self, playerInfo) {
     otherPlayer.setTint(0x737373)
 
     setTimeout(() => {
-        otherPlayer.setTint(0xff0000);
+        otherPlayer.setTint(`0x${playerInfo.color}`);
     }, 2000)
 }
 
@@ -445,5 +414,10 @@ function destroyPlayer(self, player) {
     animation.setTexture('sprExplosion')
     animation.setScale(2.5, 2.5)
     animation.play('sprExplosion')
+    animation.on('animationcomplete', () => {
+        if (animation) {
+            animation.destroy()
+        }
+    })
     player.destroy()
 }
