@@ -181,13 +181,16 @@ function create() {
             gameFinished = true
         })
 
-        // this.socket.on('removePlayer', (playerName) => {
-        //     console.log('removePlayer', playerName)
-        //     self.otherPlayers.getChildren().forEach((otherPlayer) => {
-        //         if (playerName === otherPlayer.getData('playerName')) {
-        //             destroyPlayer(this, otherPlayer)
-        //         }
-        //     });
+        this.socket.on('removePlayer', (playerName) => {
+            self.otherPlayers.getChildren().forEach((otherPlayer) => {
+                if (playerName === otherPlayer.getData('playerName')) {
+                    destroyPlayer(this, otherPlayer)
+                }
+            });
+        })
+
+        // this.socket.on('renderPowerUp',()=>{
+
         // })
 
         this.socket.on('revivePlayer', (playerInfo) => {
@@ -253,8 +256,8 @@ function addOtherPlayers(self, playerInfo) {
 
     setTimeout(() => {
         otherPlayer.setTint(`0x${playerInfo.color}`);
-        self.physics.add.collider(otherPlayer, self.lasers, somethingHitsAEnemy, null, self)
-        self.physics.add.collider(otherPlayer, self.meteors, somethingHitsAEnemy, null, self)
+    //     self.physics.add.collider(otherPlayer, self.lasers, somethingHitsAEnemy, null, self)
+        self.physics.add.overlap(otherPlayer, self.meteors, somethingHitsAEnemy, null, self)
     }, 2500)
 }
 
@@ -282,6 +285,6 @@ function destroyAll(objectA, objectB) {
 
 // TODO: decide which one has the source of the true, the enemy or you
 function somethingHitsAEnemy(enemy, object) {
-    destroyPlayer(this, enemy)
+    // destroyPlayer(this, enemy)
     object.destroy()
 }

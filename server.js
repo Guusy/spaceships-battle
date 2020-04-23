@@ -145,7 +145,7 @@ io.on('connection', function (socket) {
       players[room][killer].score += 20
     }
 
-    // socket.to(room).emit('removePlayer', playerName)
+    socket.to(room).emit('removePlayer', playerName)
 
     const newScore = players[room][playerName].score - 20
     players[room][playerName].score = (newScore >= 0) ? newScore : 0
