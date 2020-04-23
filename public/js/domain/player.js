@@ -40,12 +40,8 @@ window.Player = class Player {
     hitByMeteor(game, meteor) {
         this.destroy(game)
         meteor.destroy()
-        if (!meteor.getData('isHited')) {
-            const credentials = this.connectionCredentials()
-            game.socket.emit('killed', { killer: null, ...credentials })
-            game.socket.emit('meteorDestroyed', { id: meteor.getData('id'), ...credentials })
-            meteor.setData('isHited', true)
-        }
+        const credentials = this.connectionCredentials()
+        game.socket.emit('killed', { killer: null, ...credentials })
     }
 
     calculateMovement({ socket, cursors, physics }) {
@@ -82,31 +78,39 @@ window.Player = class Player {
             } else {
                 game.sound.play('laserSound');
                 const color = `0x${player.data.color}`
-                this.renderLaser(game, color)
+                const id = '_' + Math.random().toString(36).substr(2, 9)
+                this.renderLaser(game, { id, color })
                 game.socket.emit('shoot',
-                    { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation, color, ...this.connectionCredentials() });
+                    {
+                        id,
+                        x: this.ship.x,
+                        y: this.ship.y,
+                        rotation: this.ship.rotation,
+                        color,
+                        ...this.connectionCredentials()
+                    });
                 this.data.timerShootTick = 0
             }
         }
     }
 
 
-    renderLaser(game, color) {
-        var laser = game.lasers.create(this.ship.x, this.ship.y, 'laser');
-        laser.setTint(color)
-        laser.rotation = this.ship.rotation
-        laser.setData('playerName', this.data.playerName)
-        game.physics.velocityFromRotation(this.ship.rotation + 1.5, 3000, laser.body.acceleration);
+    renderLaser(game, { id, color }) {
+        const { x, y, rotation } = this.ship
+        const { playerName } = this.data
+        game.renderLaser(game.lasers, { id, color, x, y, rotation, playerName })
     }
 
     hitByEnemyLaser(game, enemyLaser) {
         this.destroy(game)
-        game.socket.emit('killed', { killer: enemyLaser.getData('playerName'), ...this.connectionCredentials() })
+        const credentials = this.connectionCredentials()
+        game.socket.emit('killed', { killer: enemyLaser.getData('playerName'), ...credentials })
         enemyLaser.destroy()
     }
 
     destroy(game) {
         const animation = game.physics.add.sprite(this.ship.x, this.ship.y, 'ship')
+        this.ship.destroy()
         animation.setTexture('sprExplosion')
         animation.setScale(2.5, 2.5)
         animation.play('sprExplosion')
@@ -115,7 +119,6 @@ window.Player = class Player {
                 animation.destroy()
             }
         })
-        this.ship.destroy()
     }
 
     connectionCredentials() {

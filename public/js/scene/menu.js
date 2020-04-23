@@ -3,7 +3,6 @@ window.menu = (self, { joinGame, createGame }) => {
 
     element.addListener('click');
     element.on('click', function ({ target: { name } }) {
-        console.log('wtfff')
         if (name === 'createGame') {
             this.setVisible(false);
             createGame()

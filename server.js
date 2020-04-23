@@ -8,7 +8,18 @@ var players = {};
 const colors = ['0bed07', '200ee8', 'ed2009', 'db07eb', 'f56d05']
 
 const rooms = {
-  
+  // debug: {
+  //   quantityPlayers: 1,
+  //   time: 120000,
+  //   width: 1000,
+  //   colors
+  // },
+  // d_m: {
+  //   quantityPlayers: 2,
+  //   time: 60000,
+  //   width: 1000,
+  //   colors
+  // }
 }
 
 
@@ -87,7 +98,6 @@ io.on('connection', function (socket) {
       rooms[room].meteorInterval = setInterval(() => {
         if (randomIntFromInterval(0, 10) >= 3) {
           const meteor = {
-            id: '_' + Math.random().toString(36).substr(2, 9),
             x: randomIntFromInterval(0, roomData.width),
             y: 0,
             scale: (randomIntFromInterval(10, 20) * 0.1),
@@ -109,10 +119,6 @@ io.on('connection', function (socket) {
         io.in(room).emit('starLocation', createStar());
       }, 3000)
     }
-  })
-
-  socket.on('meteorDestroyed', ({ id, room }) => {
-    socket.to(room).emit('meteorDestroyed', id)
   })
 
   socket.on('playerMovement', function ({ x, y, rotation, playerName, room }) {
@@ -139,7 +145,7 @@ io.on('connection', function (socket) {
       players[room][killer].score += 20
     }
 
-    socket.to(room).emit('removePlayer', playerName)
+    // socket.to(room).emit('removePlayer', playerName)
 
     const newScore = players[room][playerName].score - 20
     players[room][playerName].score = (newScore >= 0) ? newScore : 0

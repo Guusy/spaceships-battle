@@ -88,7 +88,16 @@ function create() {
         this.enemiesLasers = this.physics.add.group()
         this.meteors = this.physics.add.group()
 
-        self.physics.add.overlap(self.lasers, self.meteors, laserHitMeteor, null, self)
+        self.physics.add.overlap(self.lasers, self.meteors, destroyAll, null, self)
+        self.physics.add.overlap(self.enemiesLasers, self.meteors, destroyAll, null, self)
+
+        this.renderLaser = (group, { x, y, color, rotation, playerName }) => {
+            var laser = group.create(x, y, 'laser');
+            laser.setTint(color)
+            laser.rotation = rotation
+            laser.setData('playerName', playerName)
+            this.physics.velocityFromRotation(rotation + 1.5, 3000, laser.body.acceleration);
+        }
 
         this.socket.on('renderMeteor', ({ id, x, y, scale, velocity }) => {
             meteor = this.meteors.create(x, y, 'meteor')
@@ -107,9 +116,11 @@ function create() {
                 }
             });
         });
+
         this.socket.on('newPlayer', function (playerInfo) {
             addOtherPlayers(self, playerInfo);
         });
+
         this.socket.on('disconnect', function (playerId) {
             self.otherPlayers.getChildren().forEach(function (otherPlayer) {
                 if (playerId === otherPlayer.playerId) {
@@ -149,11 +160,11 @@ function create() {
             }, 3000)
         });
 
-        this.socket.on('playerShooted', function (laser) {
-            self.sound.play('laserSound');
-            const isMe = laser.player === self.socket.id
+        this.socket.on('playerShooted', (laser) => {
+            this.sound.play('laserSound');
+            const isMe = laser.player === this.socket.id
             if (!isMe) {
-                renderEnemylaser(self, laser)
+                this.renderLaser(self.enemiesLasers, laser)
             }
         })
 
@@ -170,22 +181,14 @@ function create() {
             gameFinished = true
         })
 
-        this.socket.on('meteorDestroyed', (id) => {
-            self.meteors.getChildren().forEach((meteor) => {
-                if (meteor.getData('id') === id) {
-                    meteor.destroy()
-                }
-            })
-        })
-
-        this.socket.on('removePlayer', (playerName) => {
-            console.log('removePlayer', playerName)
-            self.otherPlayers.getChildren().forEach((otherPlayer) => {
-                if (playerName === otherPlayer.getData('playerName')) {
-                    destroyPlayer(this, otherPlayer)
-                }
-            });
-        })
+        // this.socket.on('removePlayer', (playerName) => {
+        //     console.log('removePlayer', playerName)
+        //     self.otherPlayers.getChildren().forEach((otherPlayer) => {
+        //         if (playerName === otherPlayer.getData('playerName')) {
+        //             destroyPlayer(this, otherPlayer)
+        //         }
+        //     });
+        // })
 
         this.socket.on('revivePlayer', (playerInfo) => {
             const isMe = playerInfo.playerName === player.data.playerName
@@ -238,13 +241,6 @@ function finishGame(self) {
 }
 
 // Game functions of enemies TODO: Migrate to a domain object
-function renderEnemylaser(self, enemyLaser) {
-    var laser = self.enemiesLasers.create(enemyLaser.x, enemyLaser.y, 'laser');
-    laser.setTint(enemyLaser.color)
-    laser.rotation = enemyLaser.rotation
-    laser.setData('playerName', enemyLaser.playerName)
-    self.physics.velocityFromRotation(enemyLaser.rotation + 1.5, 3000, laser.body.acceleration);
-}
 
 function addOtherPlayers(self, playerInfo) {
     const otherPlayer = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'otherPlayer').setOrigin(0.5, 0.5).setDisplaySize(53, 40);
@@ -257,13 +253,16 @@ function addOtherPlayers(self, playerInfo) {
 
     setTimeout(() => {
         otherPlayer.setTint(`0x${playerInfo.color}`);
-    }, 2000)
+        self.physics.add.collider(otherPlayer, self.lasers, somethingHitsAEnemy, null, self)
+        self.physics.add.collider(otherPlayer, self.meteors, somethingHitsAEnemy, null, self)
+    }, 2500)
 }
 
 // Player functionaniltiies 
 
 function destroyPlayer(self, player) {
     const animation = self.physics.add.sprite(player.x, player.y, 'ship')
+    player.destroy()
     animation.setTexture('sprExplosion')
     animation.setScale(2.5, 2.5)
     animation.play('sprExplosion')
@@ -272,15 +271,17 @@ function destroyPlayer(self, player) {
             animation.destroy()
         }
     })
-    player.destroy()
 }
 
 // Game functionalities
 
-function laserHitMeteor(laser, meteor) {
-    meteor.destroy()
-    if (!meteor.getData('isHited')) {
-        meteor.setData('isHited', true)
-        this.socket.emit('meteorDestroyed', { id: meteor.getData('id'), ...player.connectionCredentials() })
-    }
+function destroyAll(objectA, objectB) {
+    objectA.destroy()
+    objectB.destroy()
+}
+
+// TODO: decide which one has the source of the true, the enemy or you
+function somethingHitsAEnemy(enemy, object) {
+    destroyPlayer(this, enemy)
+    object.destroy()
 }

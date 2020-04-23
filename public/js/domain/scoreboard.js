@@ -23,7 +23,6 @@ window.ScoreBoard = class ScoreBoard {
         if (this.needsToUpdate) {
             this.getSortedScores().forEach((aPlayer, index) => {
                 const text = this.scoresTexts[index]
-                console.log('s', aPlayer, this.scoresTexts)
                 if (text) {
                     text.setText(`${index + 1}.${aPlayer.playerName} : ${aPlayer.score}`)
                     text.setColor(`#${aPlayer.color}`)
