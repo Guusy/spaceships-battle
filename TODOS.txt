@@ -1,14 +1,26 @@
-- Agregar diferentes tipos de nave, al principio random, despues a seleccionar y autos locos para acho o un barco
-- Diferentes tipos de disparos.
-- Que tengan una habilidad especial.
 - Chequear el derrape.
 - Resize de pantalla
-- Power ups por el mapa
-- cada x cantidad de estrella ganar poderes
-- Agregar nombres en las naves
-- Quien mato a quien corte detamtch de cs go
-- Barras de vida a las naves ( arriba nombre  y abajo barrita de vida) (3 estados)
 - Choque entre naves
+
+Bugfixing:
+- Destruir los lasesres cuando impactan contra algo (generar un id, generalizar para otros objetos del mapa)
+
+Features:
+- Barras de vida a las naves ( arriba nombre  y abajo barrita de vida) (3 estados)
+- Cada 3 estrellas una habilidad
+- Habilidades por el mapa y una random
+- Quien mato a quien corte detamtch de cs go
+- Agregar diferentes tipos de nave, al principio random, despues a seleccionar y autos locos para acho o un barco
+- Diferentes tipos de disparos.
+- Meteoros random por el mapa
+- Moverse con awsd y las teclas para disparar son jkl
+
+Habilidades:s
+    - Laser gigante (no te puedas mover)
+    - Tres tiros en angulo
+    - Escudo por 3 segundos
+    - Escudo de un golpe 
+    - Dash
 
 
 DONE:

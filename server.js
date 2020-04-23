@@ -8,7 +8,7 @@ var players = {};
 const colors = ['0bed07', '200ee8', 'ed2009', 'db07eb', 'f56d05']
 
 const rooms = {
-
+  
 }
 
 
@@ -120,11 +120,11 @@ io.on('connection', function (socket) {
     players[room][playerName].y = y;
     players[room][playerName].rotation = rotation;
     // emit a message to all players about the player that moved
-    socket.in(room).emit('playerMoved', players[room][playerName]);
+    socket.to(room).emit('playerMoved', players[room][playerName]);
   });
 
   socket.on('shoot', function (shootData) {
-    socket.in(shootData.room).emit('playerShooted', shootData);
+    socket.to(shootData.room).emit('playerShooted', shootData);
   });
 
   socket.on('starCollected', function ({ playerName, room }) {

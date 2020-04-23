@@ -29,39 +29,17 @@ var config = {
     }
 };
 
-function formatMinutes(time) {
-    // Hours, minutes and seconds
-    var mins = ~~((time % 3600) / 60);
-    var secs = ~~time % 60;
-
-    // Output like "1:01" or "4:03:59" or "123:03:59"
-    var ret = "";
-
-    ret += "" + mins + ":" + (secs < 10 ? "0" : "");
-    ret += "" + secs;
-    return ret;
-}
-
 const sortPlayerByScore = (players) => players.sort((playerA, playerB) => playerB.score - playerA.score)
 
 var game = new Phaser.Game(config);
-var laser
-var bullets;
-var fireRate = 100;
-var nextFire = 0;
-var timerShootDelay = 30
-var timerShootTick = timerShootDelay - 1
+
 var step = "SET_NAME"
-var playerName;
 var room;
 var time = 0;
 var gameFinished = false
-var scores;
-var scoresTexts;
-var needToUpdateTheScores = false
-const player = {
+let scoreboard;
+let player;
 
-}
 function preload() {
     this.load.image('ship', 'assets/spaceShips_001.png');
     this.load.image('otherPlayer', 'assets/enemyBlack5.png');
@@ -96,10 +74,7 @@ function create() {
 
 
     const game = (props) => {
-        playerName = props.playerName
-        room = props.room
-        player.playerName = playerName
-        player.room = room
+        this.room = props.room
         step = "PLAYING_GAME"
         console.log("start the game")
 
@@ -107,7 +82,7 @@ function create() {
         this.timer = this.add.text(584, 16, "Waiting for others players", { fontSize: '32px' });
         this.cursors = this.input.keyboard.createCursorKeys();
 
-        this.socket.emit('enterGame', { playerName, room })
+        this.socket.emit('enterGame', { playerName: props.playerName, room: props.room })
 
         this.lasers = this.physics.add.group()
         this.enemiesLasers = this.physics.add.group()
@@ -126,7 +101,7 @@ function create() {
         this.socket.on('currentPlayers', function (players) {
             Object.keys(players).forEach(function (id) {
                 if (players[id].playerId === self.socket.id) {
-                    addPlayer(self, players[id]);
+                    player = new Player(self, players[id])
                 } else {
                     addOtherPlayers(self, players[id]);
                 }
@@ -155,20 +130,10 @@ function create() {
         });
 
         this.socket.on('scoreUpdate', function (newScores) {
-            scores = newScores
-            console.log('wtf?', scores)
-            needToUpdateTheScores = true
-            if (!scoresTexts) {
-                scoresTexts = []
-                let scorePosition = 32
-
-                scoresTexts = scores.map(aPlayer => {
-                    scorePosition += 16
-                    return self.add.text(64,
-                        scorePosition,
-                        aPlayer.playerName + ': ' + aPlayer.score,
-                        { fontSize: '18px', fill: `#${aPlayer.color}` });
-                })
+            if (!scoreboard) {
+                scoreboard = new ScoreBoard(self, newScores)
+            } else {
+                scoreboard.updateScores(newScores)
             }
         });
 
@@ -178,7 +143,9 @@ function create() {
             self.star.setTint(0x737373)
             setTimeout(() => {
                 self.star.clearTint()
-                self.physics.add.overlap(self.ship, self.star, collectStar, null, self);
+                self.physics.add.overlap(player.ship,
+                    self.star,
+                    (_, star) => player.collectStar(self, star));
             }, 3000)
         });
 
@@ -221,9 +188,9 @@ function create() {
         })
 
         this.socket.on('revivePlayer', (playerInfo) => {
-            const isMe = playerInfo.playerName === playerName
+            const isMe = playerInfo.playerName === player.data.playerName
             if (isMe) {
-                addPlayer(self, playerInfo);
+                player = new Player(self, playerInfo)
             } else {
                 addOtherPlayers(self, playerInfo);
             }
@@ -236,123 +203,47 @@ function create() {
 
 function update() {
     if (step !== "SET_NAME") {
-        if (this.ship && this.ship.scene) {
-            if (this.cursors.left.isDown) {
-                this.ship.setAngularVelocity(-150);
-            } else if (this.cursors.right.isDown) {
-                this.ship.setAngularVelocity(150);
-            } else {
-                this.ship.setAngularVelocity(0);
-            }
-
-            if (this.cursors.up.isDown) {
-                this.physics.velocityFromRotation(this.ship.rotation + 1.5, 500, this.ship.body.acceleration);
-            } else {
-                this.ship.setAcceleration(0);
-            }
-
-            if (this.cursors.space.isDown && this.ship.getData('canShoot')) {
-                if (timerShootTick < timerShootDelay) {
-                    timerShootTick += 1
-                } else {
-                    this.sound.play('laserSound');
-                    const color = `0x${player.data.color}`
-                    renderLaser(this, player.ship, this.lasers, color)
-                    this.socket.emit('shoot', { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation, color, ...connectionCredentials() });
-                    timerShootTick = 0
-                }
-            }
-
-            // emit player movement
-            var x = this.ship.x;
-            var y = this.ship.y;
-            var r = this.ship.rotation;
-            if (this.ship.oldPosition && (x !== this.ship.oldPosition.x || y !== this.ship.oldPosition.y || r !== this.ship.oldPosition.rotation)) {
-                this.socket.emit('playerMovement', { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation, ...connectionCredentials() });
-            }
-
-            // save old position data
-            this.ship.oldPosition = {
-                x: this.ship.x,
-                y: this.ship.y,
-                rotation: this.ship.rotation,
-                playerName
-            };
-
-            if (scores && needToUpdateTheScores) {
-                const sortedPlayers = sortPlayerByScore(scores)
-                sortedPlayers.forEach((aPlayer, index) => {
-                    const text = scoresTexts[index]
-                    if (text) {
-                        text.setText(`${index + 1}.${aPlayer.playerName} : ${aPlayer.score}`)
-                        text.setColor(`#${aPlayer.color}`)
-                    }
-                })
-                needToUpdateTheScores = false
+        if (player && player.ship && player.ship.scene) {
+            player.calculateMovement(this)
+            player.calculateShoot(this)
+            if (scoreboard) {
+                scoreboard.update(this)
             }
         }
 
         if (gameFinished) {
-            gameFinished = false
-            this.physics.pause()
-            const sortedPlayers = sortPlayerByScore(scores)
-            const x = self.game.config.width * 0.3
-            const y = self.game.config.height * 0.3
-            const [winner] = sortedPlayers
-            this.add.text(x, y, 'Game finished', { fontSize: '32px', fill: 'white' });
-            let scoreBoardLinePosition = y + 32
-            this.add.text(x, scoreBoardLinePosition, 'Winner => ' + winner.playerName, { fontSize: '28px', fill: 'white' });
-
-            sortedPlayers.forEach(aPlayer => {
-                scoreBoardLinePosition += 32
-                this.add.text(x, scoreBoardLinePosition, aPlayer.playerName + ': ' + aPlayer.score, { fontSize: '24px', fill: 'white' });
-            })
+            finishGame(this)
         } else {
             this.timer.setText('Time:' + formatMinutes(time));
         }
     }
-
 }
 
 
-// Game functions
-function renderEnemylaser(self, laser) {
-    renderLaser(self, laser, self.enemiesLasers, laser.color)
+function finishGame(self) {
+    gameFinished = false
+    self.physics.pause()
+    const sortedPlayers = scoreboard.getSortedScores()
+    const x = self.game.config.width * 0.3
+    const y = self.game.config.height * 0.3
+    const [winner] = sortedPlayers
+    self.add.text(x, y, 'Game finished', { fontSize: '32px', fill: 'white' });
+    let scoreBoardLinePosition = y + 32
+    self.add.text(x, scoreBoardLinePosition, 'Winner => ' + winner.playerName, { fontSize: '28px', fill: 'white' });
+
+    sortedPlayers.forEach(aPlayer => {
+        scoreBoardLinePosition += 32
+        self.add.text(x, scoreBoardLinePosition, aPlayer.playerName + ': ' + aPlayer.score, { fontSize: '24px', fill: 'white' });
+    })
 }
 
-function renderLaser(self, ship, laserGroup, color) {
-    var laser = laserGroup.create(ship.x, ship.y, 'laser');
-    laser.setTint(color)
-    laser.rotation = ship.rotation
-    laser.setData('playerName', ship.playerName)
-    self.physics.velocityFromRotation(ship.rotation + 1.5, 3000, laser.body.acceleration);
-}
-
-function addPlayer(self, playerInfo) {
-    self.ship = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(53, 40);
-    self.ship.setDrag(100);
-    self.ship.setAngularDrag(100);
-    self.ship.setMaxVelocity(200);
-    self.ship.setCollideWorldBounds(true)
-    self.ship.setData('playerName', playerInfo.playerName)
-    self.ship.setData('canShoot', false)
-    self.ship.setTint(0x737373)
-
-    if (self.star) {
-        self.physics.add.overlap(self.ship, self.star, collectStar, null, self);
-    }
-    player.data = { ...playerInfo }
-    player.canShoot = false
-    player.ship = self.ship
-    setTimeout(() => {
-        player.ship.clearTint()
-        player.ship.setTint(`0x${playerInfo.color}`)
-        player.ship.setData('canShoot', true)
-
-        self.physics.add.overlap(player.ship, self.meteors, hitByMeteor, null, self)
-        self.physics.add.overlap(player.ship, self.enemiesLasers, hitByLaser, null, self);
-    }, 2500)
-
+// Game functions of enemies TODO: Migrate to a domain object
+function renderEnemylaser(self, enemyLaser) {
+    var laser = self.enemiesLasers.create(enemyLaser.x, enemyLaser.y, 'laser');
+    laser.setTint(enemyLaser.color)
+    laser.rotation = enemyLaser.rotation
+    laser.setData('playerName', enemyLaser.playerName)
+    self.physics.velocityFromRotation(enemyLaser.rotation + 1.5, 3000, laser.body.acceleration);
 }
 
 function addOtherPlayers(self, playerInfo) {
@@ -361,52 +252,13 @@ function addOtherPlayers(self, playerInfo) {
     otherPlayer.playerId = playerInfo.playerId;
     otherPlayer.setData('playerName', playerInfo.playerName)
     otherPlayer.setCollideWorldBounds(true)
-    self.otherPlayers.add(otherPlayer);
     otherPlayer.setTint(0x737373)
+    self.otherPlayers.add(otherPlayer);
 
     setTimeout(() => {
         otherPlayer.setTint(`0x${playerInfo.color}`);
     }, 2000)
 }
-
-function hitByLaser(player, laser) {
-    destroyPlayer(this, player)
-    this.socket.emit('killed', { killer: laser.getData('playerName'), ...connectionCredentials() })
-    laser.destroy()
-}
-
-function hitByMeteor(player, meteor) {
-    destroyPlayer(this, player)
-    meteor.destroy()
-
-    if (!meteor.getData('isHited')) {
-        this.socket.emit('killed', { killer: null, ...connectionCredentials() })
-        this.socket.emit('meteorDestroyed', { id: meteor.getData('id'), ...connectionCredentials() })
-        meteor.setData('isHited', true)
-    }
-
-}
-
-function laserHitMeteor(laser, meteor) {
-    meteor.destroy()
-    if (!meteor.getData('isHited')) {
-        meteor.setData('isHited', true)
-        this.socket.emit('meteorDestroyed', { id: meteor.getData('id'), ...connectionCredentials() })
-    }
-}
-
-function collectStar(ship, star) {
-    // TODO: change the logic to put a conditional
-    star.destroy()
-    this.socket.emit('starCollected', connectionCredentials());
-}
-function connectionCredentials() {
-    return {
-        playerName,
-        room
-    }
-}
-
 
 // Player functionaniltiies 
 
@@ -421,4 +273,14 @@ function destroyPlayer(self, player) {
         }
     })
     player.destroy()
+}
+
+// Game functionalities
+
+function laserHitMeteor(laser, meteor) {
+    meteor.destroy()
+    if (!meteor.getData('isHited')) {
+        meteor.setData('isHited', true)
+        this.socket.emit('meteorDestroyed', { id: meteor.getData('id'), ...player.connectionCredentials() })
+    }
 }
