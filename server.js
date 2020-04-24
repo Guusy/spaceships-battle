@@ -8,18 +8,18 @@ var players = {};
 const colors = ['0bed07', '200ee8', 'ed2009', 'db07eb', 'f56d05']
 
 const rooms = {
-  // debug: {
-  //   quantityPlayers: 1,
-  //   time: 120000,
-  //   width: 1000,
-  //   colors
-  // },
-  // d_m: {
-  //   quantityPlayers: 2,
-  //   time: 60000,
-  //   width: 1000,
-  //   colors
-  // }
+  debug: {
+    quantityPlayers: 1,
+    time: 120000,
+    width: 1000,
+    colors
+  },
+  d_m: {
+    quantityPlayers: 2,
+    time: 60000,
+    width: 1000,
+    colors
+  }
 }
 
 
@@ -129,8 +129,8 @@ io.on('connection', function (socket) {
     socket.to(room).emit('playerMoved', players[room][playerName]);
   });
 
-  socket.on('shoot', function (shootData) {
-    socket.to(shootData.room).emit('playerShooted', shootData);
+  socket.on('shoot', function ({ room, lasers }) {
+    socket.to(room).emit('playerShooted', { lasers });
   });
 
   socket.on('starCollected', function ({ playerName, room }) {

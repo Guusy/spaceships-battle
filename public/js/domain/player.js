@@ -1,6 +1,7 @@
 window.Player = class Player {
 
     constructor(game, playerInfo) {
+        this.powerup;
         this.self = this
         this.ship = game.physics.add.sprite(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(53, 40);
         this.ship.setDrag(100);
@@ -8,7 +9,6 @@ window.Player = class Player {
         this.ship.setMaxVelocity(200);
         this.ship.setCollideWorldBounds(true)
         this.ship.setData('playerName', playerInfo.playerName)
-        this.ship.setData('canShoot', false)
         this.ship.setTint(0x737373)
 
         if (game.star) {
@@ -44,6 +44,12 @@ window.Player = class Player {
         game.socket.emit('killed', { killer: null, ...credentials })
     }
 
+    checkPowerUpActivation(game) {
+        if (this.powerup) {
+            this.powerup.activate(game, this)
+        }
+    }
+
     calculateMovement({ socket, cursors, physics }) {
         if (cursors.left.isDown) {
             this.ship.setAngularVelocity(-150);
@@ -77,21 +83,29 @@ window.Player = class Player {
                 this.data.timerShootTick += 1
             } else {
                 game.sound.play('laserSound');
-                const color = `0x${player.data.color}`
-                const id = '_' + Math.random().toString(36).substr(2, 9)
-                this.renderLaser(game, { id, color })
-                game.socket.emit('shoot',
-                    {
-                        id,
-                        x: this.ship.x,
-                        y: this.ship.y,
-                        rotation: this.ship.rotation,
-                        color,
-                        ...this.connectionCredentials()
-                    });
+                this.shoot(game)
                 this.data.timerShootTick = 0
             }
         }
+    }
+
+    shoot(game) {
+        const color = `0x${this.data.color}`
+        const id = game.generateRandomId()
+        this.renderLaser(game, { id, color })
+        const { room, playerName } = this.connectionCredentials()
+        game.socket.emit('shoot', {
+            room,
+            lasers: {
+                id,
+                x: this.ship.x,
+                y: this.ship.y,
+                rotation: this.ship.rotation,
+                color,
+                room,
+                playerName
+            }
+        });
     }
 
 

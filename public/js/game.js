@@ -49,6 +49,7 @@ function preload() {
     this.load.image('bg0', 'assets/sprBg0.png')
     this.load.image('bg1', 'assets/sprBg1.png')
     this.load.image('meteor', 'assets/meteorGrey_small1.png')
+    this.load.image('shield_silver', 'assets/powerups/shield_silver.png');
     this.load.html('nameform', 'assets/nameform.html');
     this.load.html('createGame', 'assets/createGame.html');
     this.load.html('menu', 'assets/menu.html');
@@ -71,7 +72,7 @@ function create() {
         frameRate: 20,
         repeat: 0
     })
-
+    this.generateRandomId = () => '_' + Math.random().toString(36).substr(2, 9)
 
     const game = (props) => {
         this.room = props.room
@@ -83,13 +84,17 @@ function create() {
         this.cursors = this.input.keyboard.createCursorKeys();
 
         this.socket.emit('enterGame', { playerName: props.playerName, room: props.room })
+        this.powerup = this.physics.add.image(50, 50, 'shield_silver');
 
+        this.lasers = this.physics.add.group()
         this.lasers = this.physics.add.group()
         this.enemiesLasers = this.physics.add.group()
         this.meteors = this.physics.add.group()
 
         self.physics.add.overlap(self.lasers, self.meteors, destroyAll, null, self)
         self.physics.add.overlap(self.enemiesLasers, self.meteors, destroyAll, null, self)
+
+        this.input.keyboard.on('keydown-J', () => player.checkPowerUpActivation(this));
 
         this.renderLaser = (group, { x, y, color, rotation, playerName }) => {
             var laser = group.create(x, y, 'laser');
@@ -111,6 +116,8 @@ function create() {
             Object.keys(players).forEach(function (id) {
                 if (players[id].playerId === self.socket.id) {
                     player = new Player(self, players[id])
+                    const { AngularLaser } = powerups
+                    player.powerup = new AngularLaser()
                 } else {
                     addOtherPlayers(self, players[id]);
                 }
@@ -160,11 +167,12 @@ function create() {
             }, 3000)
         });
 
-        this.socket.on('playerShooted', (laser) => {
+        this.socket.on('playerShooted', ({ lasers }) => {
             this.sound.play('laserSound');
-            const isMe = laser.player === this.socket.id
-            if (!isMe) {
-                this.renderLaser(self.enemiesLasers, laser)
+            if (Array.isArray(lasers)) {
+                lasers.forEach(laser => this.renderLaser(self.enemiesLasers, laser))
+            } else {
+                this.renderLaser(self.enemiesLasers, lasers)
             }
         })
 
@@ -189,9 +197,17 @@ function create() {
             });
         })
 
-        // this.socket.on('renderPowerUp',()=>{
-
-        // })
+        this.socket.on('renderPowerUp', (powerup) => {
+            if (self.powerup) self.powerup.destroy();
+            self.powerup = self.physics.add.image(powerup.x, powerup.y, 'shield_silver');
+            self.powerup.setTint(0x737373)
+            setTimeout(() => {
+                self.powerup.clearTint()
+                // self.physics.add.overlap(player.ship,
+                //     self.star,
+                //     (_, star) => player.collectStar(self, star));
+            }, 3000)
+        })
 
         this.socket.on('revivePlayer', (playerInfo) => {
             const isMe = playerInfo.playerName === player.data.playerName
@@ -256,7 +272,7 @@ function addOtherPlayers(self, playerInfo) {
 
     setTimeout(() => {
         otherPlayer.setTint(`0x${playerInfo.color}`);
-    //     self.physics.add.collider(otherPlayer, self.lasers, somethingHitsAEnemy, null, self)
+        //     self.physics.add.collider(otherPlayer, self.lasers, somethingHitsAEnemy, null, self)
         self.physics.add.overlap(otherPlayer, self.meteors, somethingHitsAEnemy, null, self)
     }, 2500)
 }
