@@ -6,6 +6,7 @@ const { removePlayer, randomIntFromInterval, allPlayersAreInTheRoom } = require(
 const port = process.env.PORT || 8081
 var players = {};
 const colors = ['0bed07', '200ee8', 'ed2009', 'db07eb', 'f56d05']
+const powerups = require('./domain/powerups')
 
 const rooms = {
   debug: {
@@ -41,6 +42,7 @@ const createStar = () => ({
   x: Math.floor(Math.random() * 700) + 50,
   y: Math.floor(Math.random() * 500) + 50
 })
+
 io.on('connection', function (socket) {
   console.log('a user connected');
 
@@ -118,6 +120,12 @@ io.on('connection', function (socket) {
       setTimeout(() => {
         io.in(room).emit('starLocation', createStar());
       }, 3000)
+
+      // send the power up 
+      setTimeout(() => {
+        const powerUp = { ...createStar(), ...powerups[0] }
+        io.in(room).emit('renderPowerup', powerUp); //TODO:  make random powerup
+      }, 6000)
     }
   })
 
@@ -138,6 +146,11 @@ io.on('connection', function (socket) {
     const star = createStar()
     io.emit('starLocation', star);
     io.emit('scoreUpdate', getScores(room));
+  });
+
+  socket.on('powerupCollected', function ({ playerName, room }) {
+      const powerUp = { ...createStar(), ...powerups[0] }
+      io.in(room).emit('renderPowerup', powerUp); //TODO:  make random powerup
   });
 
   socket.on('killed', function ({ killer, playerName, room }) {

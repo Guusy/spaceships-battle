@@ -50,6 +50,7 @@ function preload() {
     this.load.image('bg1', 'assets/sprBg1.png')
     this.load.image('meteor', 'assets/meteorGrey_small1.png')
     this.load.image('shield_silver', 'assets/powerups/shield_silver.png');
+    this.load.image('angularLaser', 'assets/powerups/angularLaser.png');
     this.load.html('nameform', 'assets/nameform.html');
     this.load.html('createGame', 'assets/createGame.html');
     this.load.html('menu', 'assets/menu.html');
@@ -81,10 +82,16 @@ function create() {
 
         this.otherPlayers = this.physics.add.group();
         this.timer = this.add.text(584, 16, "Waiting for others players", { fontSize: '32px' });
-        this.cursors = this.input.keyboard.createCursorKeys();
+        // this.input.keyboard.addKeys();
+        this.cursors = this.input.keyboard.addKeys({
+            'up': Phaser.Input.Keyboard.KeyCodes.W,
+            'down': Phaser.Input.Keyboard.KeyCodes.S,
+            'left': Phaser.Input.Keyboard.KeyCodes.A,
+            'right': Phaser.Input.Keyboard.KeyCodes.D,
+            'space': Phaser.Input.Keyboard.KeyCodes.SPACE,
+        });
 
         this.socket.emit('enterGame', { playerName: props.playerName, room: props.room })
-        this.powerup = this.physics.add.image(50, 50, 'shield_silver');
 
         this.lasers = this.physics.add.group()
         this.lasers = this.physics.add.group()
@@ -116,8 +123,6 @@ function create() {
             Object.keys(players).forEach(function (id) {
                 if (players[id].playerId === self.socket.id) {
                     player = new Player(self, players[id])
-                    const { AngularLaser } = powerups
-                    player.powerup = new AngularLaser()
                 } else {
                     addOtherPlayers(self, players[id]);
                 }
@@ -197,15 +202,16 @@ function create() {
             });
         })
 
-        this.socket.on('renderPowerUp', (powerup) => {
+        this.socket.on('renderPowerup', (powerup) => {
             if (self.powerup) self.powerup.destroy();
-            self.powerup = self.physics.add.image(powerup.x, powerup.y, 'shield_silver');
+            self.powerup = self.physics.add.image(powerup.x, powerup.y, powerup.icon);
+            self.powerup.setData('type', powerup.type)
             self.powerup.setTint(0x737373)
             setTimeout(() => {
                 self.powerup.clearTint()
-                // self.physics.add.overlap(player.ship,
-                //     self.star,
-                //     (_, star) => player.collectStar(self, star));
+                self.physics.add.overlap(player.ship,
+                    self.powerup,
+                    (_, powerup) => player.collectPowerup(self, powerup));
             }, 3000)
         })
 

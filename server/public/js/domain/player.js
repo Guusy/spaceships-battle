@@ -14,6 +14,9 @@ window.Player = class Player {
         if (game.star) {
             game.physics.add.overlap(this.ship, game.star, (_, star) => this.collectStar(game, star));
         }
+        if (game.powerup) {
+            game.physics.add.overlap(this.ship, game.powerup, (_, powerup) => this.collectPowerup(game, powerup));
+        }
 
         this.data = {
             ...playerInfo,
@@ -35,6 +38,12 @@ window.Player = class Player {
     collectStar(game, star) {
         star.destroy()
         game.socket.emit('starCollected', this.connectionCredentials());
+    }
+
+    collectPowerup(game, powerup) {
+        this.powerup = new powerups[powerup.getData('type')]()
+        powerup.destroy()
+        game.socket.emit('powerupCollected', this.connectionCredentials());
     }
 
     hitByMeteor(game, meteor) {

@@ -25,6 +25,7 @@ class AngularLaser extends PowerUp {
         // Laser modification
         setTimeout(() => {
             player.shoot = bkpShoot
+            player.powerup = null
         }, this.ttl)
 
         player.shoot = () => {
