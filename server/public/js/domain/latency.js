@@ -10,7 +10,7 @@ window.Latency = class Latency {
         this.history = []
         this.game = game;
         this.text = game.add.text(
-            game.cameras.main.width - 200,
+            game.cameras.main.width - 240,
             20,
             '',
             {

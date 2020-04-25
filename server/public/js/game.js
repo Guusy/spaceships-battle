@@ -78,7 +78,6 @@ function create() {
 
         this.otherPlayers = this.physics.add.group();
         this.timer = this.add.text(584, 16, "Waiting for others players", { fontSize: '32px' });
-        // this.input.keyboard.addKeys();
         this.cursors = this.input.keyboard.addKeys({
             'up': Phaser.Input.Keyboard.KeyCodes.W,
             'down': Phaser.Input.Keyboard.KeyCodes.S,
@@ -101,7 +100,6 @@ function create() {
             callback: () => this.latency.makePing()
         })
 
-        this.lasers = this.physics.add.group()
         this.lasers = this.physics.add.group()
         this.enemiesLasers = this.physics.add.group()
         this.meteors = this.physics.add.group()
@@ -286,7 +284,7 @@ function addOtherPlayers(self, playerInfo) {
 
     setTimeout(() => {
         otherPlayer.setTint(`0x${playerInfo.color}`);
-        //     self.physics.add.collider(otherPlayer, self.lasers, somethingHitsAEnemy, null, self)
+        self.physics.add.overlap(otherPlayer, self.lasers, somethingHitsAEnemy, null, self)
         self.physics.add.overlap(otherPlayer, self.meteors, somethingHitsAEnemy, null, self)
     }, 2500)
 }

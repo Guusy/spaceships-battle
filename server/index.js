@@ -152,7 +152,7 @@ io.on('connection', function (socket) {
     io.emit('scoreUpdate', getScores(room));
   });
 
-  socket.on('powerupCollected', function ({ playerName, room }) {
+  socket.on('powerupCollected', function ({ playerName, room, powerup }) {
     const powerUp = { ...createStar(), ...powerups[0] }
     io.in(room).emit('renderPowerup', powerUp); //TODO:  make random powerup
   });

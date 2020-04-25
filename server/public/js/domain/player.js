@@ -41,9 +41,11 @@ window.Player = class Player {
     }
 
     collectPowerup(game, powerup) {
-        this.powerup = new powerups[powerup.getData('type')]()
-        powerup.destroy()
-        game.socket.emit('powerupCollected', this.connectionCredentials());
+        if (!this.powerup) {
+            this.powerup = new powerups[powerup.getData('type')]()
+            powerup.destroy()
+            game.socket.emit('powerupCollected', { ...this.connectionCredentials(), powerup });
+        }
     }
 
     hitByMeteor(game, meteor) {
@@ -59,7 +61,23 @@ window.Player = class Player {
         }
     }
 
-    calculateMovement({ socket, cursors, physics }) {
+    checkPowerUpAUpdate(game) {
+        if (this.powerup) {
+            this.powerup.update(game, this)
+        }
+    }
+
+    checkPowerUpADestroy(game) {
+        if (this.powerup) {
+            this.powerup.destroy(game, this)
+        }
+    }
+
+    calculateMovement(game) {
+        const { socket, cursors, physics } = game
+
+        this.checkPowerUpAUpdate(game)
+
         if (cursors.left.isDown) {
             this.ship.setAngularVelocity(-150);
         } else if (cursors.right.isDown) {
@@ -123,7 +141,7 @@ window.Player = class Player {
         const { playerName } = this.data
         game.renderLaser(game.lasers, { id, color, x, y, rotation, playerName })
     }
-
+    // TODO: Unify with hit by meteor
     hitByEnemyLaser(game, enemyLaser) {
         this.destroy(game)
         const credentials = this.connectionCredentials()
@@ -134,6 +152,7 @@ window.Player = class Player {
     destroy(game) {
         const animation = game.physics.add.sprite(this.ship.x, this.ship.y, 'ship')
         this.ship.destroy()
+        this.checkPowerUpADestroy(game)
         animation.setTexture('sprExplosion')
         animation.setScale(2.5, 2.5)
         animation.play('sprExplosion')
