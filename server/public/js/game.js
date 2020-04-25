@@ -1,14 +1,10 @@
-const ratio = Math.max(window.innerWidth / window.innerHeight, window.innerHeight / window.innerWidth)
-const DEFAULT_HEIGHT = 720 // any height you want
-const DEFAULT_WIDTH = ratio * DEFAULT_HEIGHT
-
 var config = {
     type: Phaser.AUTO,
     parent: 'phaser-example',
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: 1000,
-    height: DEFAULT_HEIGHT,
+    width: 1600,
+    height: 900,
     dom: {
         createContainer: true
     },
@@ -91,7 +87,19 @@ function create() {
             'space': Phaser.Input.Keyboard.KeyCodes.SPACE,
         });
 
+        this.latency = new Latency(this)
+
         this.socket.emit('enterGame', { playerName: props.playerName, room: props.room })
+
+        this.socket.on('getPong', (id) => {
+            this.latency.receivePong(id)
+        })
+
+        this.time.addEvent({
+            delay: 250, // max 4 times per second
+            loop: true,
+            callback: () => this.latency.makePing()
+        })
 
         this.lasers = this.physics.add.group()
         this.lasers = this.physics.add.group()

@@ -129,6 +129,10 @@ io.on('connection', function (socket) {
     }
   })
 
+  socket.on('sendPing', (id) => {
+    socket.emit('getPong', id)
+  })
+
   socket.on('playerMovement', function ({ x, y, rotation, playerName, room }) {
     players[room][playerName].x = x;
     players[room][playerName].y = y;
@@ -149,8 +153,8 @@ io.on('connection', function (socket) {
   });
 
   socket.on('powerupCollected', function ({ playerName, room }) {
-      const powerUp = { ...createStar(), ...powerups[0] }
-      io.in(room).emit('renderPowerup', powerUp); //TODO:  make random powerup
+    const powerUp = { ...createStar(), ...powerups[0] }
+    io.in(room).emit('renderPowerup', powerUp); //TODO:  make random powerup
   });
 
   socket.on('killed', function ({ killer, playerName, room }) {
