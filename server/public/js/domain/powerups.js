@@ -2,6 +2,7 @@ class PowerUp {
 
     constructor(type) {
         this.type = type
+        this.isActive = false
     }
 
     init() {
@@ -19,6 +20,11 @@ class PowerUp {
     destroy() {
         throw new Error("Method not implemented.");
     }
+
+    activateInEnemy() {
+        throw new Error("Method not implemented.");
+    }
+
 }
 
 class AngularLaser extends PowerUp {
@@ -31,8 +37,10 @@ class AngularLaser extends PowerUp {
     init() { }
     update() { }
     destroy() { }
+    activateInEnemy() { }
 
     activate(game, player) {
+        this.isActive = true
         const bkpShoot = player.shoot
 
         // Laser modification
@@ -88,6 +96,7 @@ class ShieldWithTime extends PowerUp {
     init() { }
 
     activate(game, player) {
+        this.isActive = true
         // Now we need to modify the hit of the meteor and laser by a nop
         const hitByEnemyLaserBKP = player.hitByEnemyLaser
         const hitByMeteorBKP = player.hitByMeteor
@@ -95,12 +104,16 @@ class ShieldWithTime extends PowerUp {
         setTimeout(() => {
             player.hitByEnemyLaser = hitByEnemyLaserBKP
             player.hitByMeteor = hitByMeteorBKP
-            this.destroy()
+            player.checkPowerUpADestroy(game)
         }, this.ttl)
 
         player.hitByEnemyLaser = (game, laser) => { laser.destroy() }
         player.hitByMeteor = (game, meteor) => { meteor.destroy() }
 
+        this._createCircle(game)
+    }
+
+    _createCircle(game) {
         const graphics = game.add.graphics({
             lineStyle: {
                 width: 2,
@@ -113,14 +126,26 @@ class ShieldWithTime extends PowerUp {
         );
     }
 
+    activateInEnemy(game, enemyPlayer) {
+        this.isActive = true
+        this._createCircle(game)
+        this.update(game, { ship: enemyPlayer })
+        setTimeout(() => {
+            this.destroy()
+        }, this.ttl)
+    }
+
     update(game, player) {
-        const { x, y, rotation } = player.ship
+        const { x, y } = player.ship
         this.display.x = x
         this.display.y = y
     }
 
     destroy() {
-        this.display.destroy()
+        if (this.isActive) {
+            this.isActive = false
+            this.display.destroy()
+        }
     }
 }
 

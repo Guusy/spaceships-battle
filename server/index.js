@@ -53,6 +53,7 @@ io.on('connection', function (socket) {
       quantityPlayers: qPlayers,
       time: Number.parseFloat(time, 10) * 60000,
       colors: colors.slice(0, qPlayers),
+      isRunning: false,
       width
     }
   })
@@ -86,7 +87,8 @@ io.on('connection', function (socket) {
     socket.in(room).emit('newPlayer', roomPlayers[playerName]);
 
     const gameIsReady = allPlayersAreInTheRoom({ players, rooms, room })
-    if (gameIsReady) {
+    if (gameIsReady && !roomData.isRunning) {
+      rooms[room].isRunning = true
       const time = roomData.time
       // Send to the users the real time, to manage in the client
       io.in(room).emit('initTimmer', time);
@@ -123,7 +125,7 @@ io.on('connection', function (socket) {
 
       // send the power up 
       setTimeout(() => {
-        const powerUp = { ...createStar(), ...powerups[0] }
+        const powerUp = { ...createStar(), ...powerups[1] }
         io.in(room).emit('renderPowerup', powerUp); //TODO:  make random powerup
       }, 6000)
     }
@@ -153,8 +155,13 @@ io.on('connection', function (socket) {
   });
 
   socket.on('powerupCollected', function ({ playerName, room, powerup }) {
-    const powerUp = { ...createStar(), ...powerups[0] }
+    const powerUp = { ...createStar(), ...powerups[1] }
+    socket.to(room).emit('powerupCollected', { playerName, powerup })
     io.in(room).emit('renderPowerup', powerUp); //TODO:  make random powerup
+  });
+
+  socket.on('powerupActivated', function ({ playerName, room, powerup }) {
+    socket.to(room).emit('powerupActivated', { playerName, powerup })
   });
 
   socket.on('killed', function ({ killer, playerName, room }) {

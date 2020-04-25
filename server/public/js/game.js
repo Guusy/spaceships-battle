@@ -36,6 +36,8 @@ var gameFinished = false
 let scoreboard;
 let player;
 
+const getPowerup = (key) => powerups[key]
+
 function preload() {
     this.load.image('ship', 'assets/spaceShips_001.png');
     this.load.image('otherPlayer', 'assets/enemyBlack5.png');
@@ -45,7 +47,7 @@ function preload() {
     this.load.image('bg0', 'assets/sprBg0.png')
     this.load.image('bg1', 'assets/sprBg1.png')
     this.load.image('meteor', 'assets/meteorGrey_small1.png')
-    this.load.image('shield_silver', 'assets/powerups/shield_silver.png');
+    this.load.image('shieldWithTime', 'assets/powerups/shieldWithTime.png');
     this.load.image('angularLaser', 'assets/powerups/angularLaser.png');
     this.load.html('nameform', 'assets/nameform.html');
     this.load.html('createGame', 'assets/createGame.html');
@@ -117,6 +119,16 @@ function create() {
             this.physics.velocityFromRotation(rotation + 1.5, 3000, laser.body.acceleration);
         }
 
+        this.findEnemyByName = (name) => {
+            let enemy
+            this.otherPlayers.getChildren().forEach((otherPlayer) => {
+                if (name === otherPlayer.getData('playerName')) {
+                    enemy = otherPlayer
+                }
+            });
+            return enemy
+        }
+
         this.socket.on('renderMeteor', ({ id, x, y, scale, velocity }) => {
             meteor = this.meteors.create(x, y, 'meteor')
             meteor.setScale(scale)
@@ -149,13 +161,13 @@ function create() {
 
 
         this.socket.on('playerMoved', function (playerInfo) {
-            self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-                if (playerInfo.playerId === otherPlayer.playerId) {
-                    otherPlayer.setRotation(playerInfo.rotation);
-                    otherPlayer.setPosition(playerInfo.x, playerInfo.y);
-                }
-            });
-
+            const enemy = this.findEnemyByName(playerInfo.playerName)
+            enemy.setRotation(playerInfo.rotation);
+            enemy.setPosition(playerInfo.x, playerInfo.y);
+            const powerup = enemy.getData('powerup')
+            if (powerup && powerup.isActive) {
+                powerup.update(self, { ship: enemy })
+            }
         });
 
         this.socket.on('scoreUpdate', function (newScores) {
@@ -201,11 +213,8 @@ function create() {
         })
 
         this.socket.on('removePlayer', (playerName) => {
-            self.otherPlayers.getChildren().forEach((otherPlayer) => {
-                if (playerName === otherPlayer.getData('playerName')) {
-                    destroyPlayer(this, otherPlayer)
-                }
-            });
+            const enemy = this.findEnemyByName(playerName)
+            destroyPlayer(this, enemy)
         })
 
         this.socket.on('renderPowerup', (powerup) => {
@@ -220,6 +229,18 @@ function create() {
                     (_, powerup) => player.collectPowerup(self, powerup));
             }, 3000)
         })
+
+        this.socket.on('powerupCollected', ({ playerName, powerup }) => {
+            const enemy = this.findEnemyByName(playerName)
+            const Powerup = getPowerup(powerup.type)
+            const currentPowerup = new Powerup()
+            enemy.setData('powerup', currentPowerup)
+        });
+
+        this.socket.on('powerupActivated', ({ playerName, powerup }) => {
+            const enemy = this.findEnemyByName(playerName)
+            enemy.getData('powerup').activateInEnemy(this, enemy)
+        });
 
         this.socket.on('revivePlayer', (playerInfo) => {
             const isMe = playerInfo.playerName === player.data.playerName

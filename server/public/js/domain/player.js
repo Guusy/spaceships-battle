@@ -44,7 +44,7 @@ window.Player = class Player {
         if (!this.powerup) {
             this.powerup = new powerups[powerup.getData('type')]()
             powerup.destroy()
-            game.socket.emit('powerupCollected', { ...this.connectionCredentials(), powerup });
+            game.socket.emit('powerupCollected', { ...this.connectionCredentials(), powerup: this.powerup });
         }
     }
 
@@ -56,20 +56,23 @@ window.Player = class Player {
     }
 
     checkPowerUpActivation(game) {
-        if (this.powerup) {
+        if (this.powerup && !this.powerup.isActive) {
+            game.socket.emit('powerupActivated', { ...this.connectionCredentials(), powerup: this.powerup })
             this.powerup.activate(game, this)
         }
     }
 
     checkPowerUpAUpdate(game) {
-        if (this.powerup) {
+        if (this.powerup && this.powerup.isActive) {
             this.powerup.update(game, this)
         }
     }
 
     checkPowerUpADestroy(game) {
-        if (this.powerup) {
+        if (this.powerup && this.powerup.isActive) {
+            console.log('go to put null')
             this.powerup.destroy(game, this)
+            this.powerup = null
         }
     }
 
