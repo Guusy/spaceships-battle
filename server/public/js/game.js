@@ -160,13 +160,13 @@ function create() {
         });
 
 
-        this.socket.on('playerMoved', function (playerInfo) {
+        this.socket.on('playerMoved', (playerInfo) => {
             const enemy = this.findEnemyByName(playerInfo.playerName)
             enemy.setRotation(playerInfo.rotation);
             enemy.setPosition(playerInfo.x, playerInfo.y);
             const powerup = enemy.getData('powerup')
             if (powerup && powerup.isActive) {
-                powerup.update(self, { ship: enemy })
+                powerup.update(this, { ship: enemy })
             }
         });
 

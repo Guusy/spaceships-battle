@@ -43,6 +43,11 @@ const createStar = () => ({
   y: Math.floor(Math.random() * 500) + 50
 })
 
+const createPowerup = () => {
+  const randomPowerUp = powerups[randomIntFromInterval(0, powerups.length - 1)]
+  return { ...createStar(), ...randomPowerUp }
+}
+
 io.on('connection', function (socket) {
   console.log('a user connected');
 
@@ -125,7 +130,7 @@ io.on('connection', function (socket) {
 
       // send the power up 
       setTimeout(() => {
-        const powerUp = { ...createStar(), ...powerups[1] }
+        const powerUp = createPowerup()
         io.in(room).emit('renderPowerup', powerUp); //TODO:  make random powerup
       }, 6000)
     }
@@ -155,7 +160,7 @@ io.on('connection', function (socket) {
   });
 
   socket.on('powerupCollected', function ({ playerName, room, powerup }) {
-    const powerUp = { ...createStar(), ...powerups[1] }
+    const powerUp = createPowerup()
     socket.to(room).emit('powerupCollected', { playerName, powerup })
     io.in(room).emit('renderPowerup', powerUp); //TODO:  make random powerup
   });
