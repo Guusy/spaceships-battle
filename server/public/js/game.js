@@ -251,8 +251,8 @@ function create() {
             }
         })
     }
-    game({ playerName: 'gonzalo', room: 'debug' }) // debug mode
-    // menu(self, { joinGame: joinGame(self, game), createGame: createGame(self, game) })
+    // game({ playerName: 'gonzalo', room: 'debug' }) // debug mode
+    menu(self, { joinGame: joinGame(self, game), createGame: createGame(self, game) })
 
 }
 
