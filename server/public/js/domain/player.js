@@ -78,7 +78,7 @@ window.Player = class Player {
     }
 
     checkPowerUpADestroy(game) {
-        if (this.powerup && this.powerup.isActive) {
+        if (this.powerup) {
             this.powerup.destroy(game, this)
             this.powerup = null
         }
