@@ -18,10 +18,26 @@ class PowerUp {
     }
 
     destroy() {
-        throw new Error("Method not implemented.");
+        if (this.icon) {
+            this.icon.destroy()
+        }
+        this.doDestroy()
     }
 
     activateInEnemy() {
+        throw new Error("Method not implemented.");
+    }
+
+    renderIcon(game) {
+        const icon = this.getIcon();
+        this.icon = game.add.image(game.cameras.main.width - 80, 60, icon)
+    }
+
+    getIcon() {
+        throw new Error("Method not implemented.");
+    }
+
+    doDestroy() {
         throw new Error("Method not implemented.");
     }
 
@@ -34,10 +50,14 @@ class AngularLaser extends PowerUp {
         this.ttl = 10000
     }
 
+    getIcon() {
+        return 'angularLaser'
+    }
+
     init() { }
     update() { }
-    destroy() { }
     activateInEnemy() { }
+    doDestroy() { }
 
     activate(game, player) {
         this.isActive = true
@@ -46,7 +66,7 @@ class AngularLaser extends PowerUp {
         // Laser modification
         setTimeout(() => {
             player.shoot = bkpShoot
-            player.powerup = null
+            player.checkPowerUpADestroy(game)
         }, this.ttl)
 
         player.shoot = () => {
@@ -91,6 +111,10 @@ class ShieldWithTime extends PowerUp {
     constructor() {
         super('ShieldWithTime')
         this.ttl = 3000
+    }
+
+    getIcon() {
+        return 'shieldWithTime'
     }
 
     init() { }
@@ -141,7 +165,7 @@ class ShieldWithTime extends PowerUp {
         this.display.y = y
     }
 
-    destroy() {
+    doDestroy() {
         if (this.isActive) {
             this.isActive = false
             this.display.destroy()

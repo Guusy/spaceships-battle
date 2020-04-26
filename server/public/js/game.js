@@ -86,6 +86,8 @@ function create() {
             'left': Phaser.Input.Keyboard.KeyCodes.A,
             'right': Phaser.Input.Keyboard.KeyCodes.D,
             'space': Phaser.Input.Keyboard.KeyCodes.SPACE,
+            'dash': Phaser.Input.Keyboard.KeyCodes.K,
+            'activatePowerup': Phaser.Input.Keyboard.KeyCodes.J,
         });
 
         this.latency = new Latency(this)
@@ -108,8 +110,6 @@ function create() {
 
         self.physics.add.overlap(self.lasers, self.meteors, destroyAll, null, self)
         self.physics.add.overlap(self.enemiesLasers, self.meteors, destroyAll, null, self)
-
-        this.input.keyboard.on('keydown-J', () => player.checkPowerUpActivation(this));
 
         this.renderLaser = (group, { x, y, color, rotation, playerName }) => {
             var laser = group.create(x, y, 'laser');
@@ -251,16 +251,15 @@ function create() {
             }
         })
     }
-    // game({ playerName: 'gonzalo', room: 'debug' }) // debug mode
-    menu(self, { joinGame: joinGame(self, game), createGame: createGame(self, game) })
+    game({ playerName: 'gonzalo', room: 'debug' }) // debug mode
+    // menu(self, { joinGame: joinGame(self, game), createGame: createGame(self, game) })
 
 }
 
 function update() {
     if (step !== "SET_NAME") {
         if (player && player.ship && player.ship.scene) {
-            player.calculateMovement(this)
-            player.calculateShoot(this)
+            player.update(this)
             if (scoreboard) {
                 scoreboard.update(this)
             }
