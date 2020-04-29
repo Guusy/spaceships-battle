@@ -38,27 +38,7 @@ const enemies = []
 const getPowerup = (key) => window.powerups[key]
 
 function preload() {
-    // TODO : create another file to preload everything
-    this.load.image('ship', 'assets/spaceShips_001.png');
-    this.load.image('otherPlayer', 'assets/enemyBlack5.png');
-    this.load.image('star', 'assets/star_gold.png');
-    this.load.image('laser', 'assets/laserPlayer.png');
-    this.load.image('laserEnemy', 'assets/laserEnemy.png');
-    this.load.image('bg0', 'assets/sprBg0.png')
-    this.load.image('bg1', 'assets/sprBg1.png')
-    this.load.image('meteor', 'assets/meteorGrey_small1.png')
-    this.load.image('shieldWithTime', 'assets/powerups/shieldWithTime.png');
-    this.load.image('angularLaser', 'assets/powerups/angularLaser.png');
-    this.load.html('nameform', 'assets/nameform.html');
-    this.load.html('createGame', 'assets/createGame.html');
-    this.load.html('menu', 'assets/menu.html');
-    this.load.spritesheet('sprExplosion', 'assets/sprExplosion.png', {
-        frameWidth: 32,
-        frameHeight: 32
-    })
-    this.load.audio('laserSound', 'assets/audio/laser.ogg', {
-        instances: 1
-    });
+    preloadAssets(this)
 }
 
 function create() {
