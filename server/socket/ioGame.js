@@ -152,4 +152,8 @@ module.exports = (server) => {
         });
 
     });
+
+    return {
+        getRooms: () => rooms
+    }
 }

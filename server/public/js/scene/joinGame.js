@@ -7,9 +7,14 @@ window.joinGame = (self, goToPlay) => () => {
             var playerName = this.getChildByName('nameField').value;
             var room = this.getChildByName('roomField').value;
             if (playerName !== '' && room !== '') {
-                //  Hide the login element
-                this.setVisible(false);
-                goToPlay({ playerName, room })
+                return fetch(`/rooms/${room}`)
+                    .then(response => {
+                        if (response.status === 200) {
+                            this.setVisible(false);
+                            return goToPlay({ playerName, room })
+                        }
+                        alert(`La sala ${room} no existe`)
+                    })
             }
         }
     })

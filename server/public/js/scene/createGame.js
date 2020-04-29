@@ -9,9 +9,15 @@ window.createGame = (self, nextStep) => () => {
             var quantityPlayers = this.getChildByName('quantityField').value;
             var time = this.getChildByName('timeField').value;
             if (playerName !== '' && room !== '' && quantityPlayers !== '' && time !== '') {
-                this.setVisible(false);
-                self.socket.emit('createGame', { room, quantityPlayers, time, width: Number.parseInt(self.game.config.width, 10) })
-                nextStep({ playerName, room })
+                return fetch(`/rooms/${room}`)
+                    .then(response => {
+                        if (response.status === 404) {
+                            this.setVisible(false);
+                            self.socket.emit('createGame', { room, quantityPlayers, time, width: Number.parseInt(self.game.config.width, 10) })
+                            return nextStep({ playerName, room })
+                        }
+                        alert(`La sala ${room} ya existe`)
+                    })
             }
         }
     })
