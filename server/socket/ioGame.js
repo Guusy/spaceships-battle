@@ -4,7 +4,6 @@ const Room = require('../domain/game/Room')
 const Player = require('../domain/game/Player')
 const Star = require('../domain/game/Star')
 const Powerup = require('../domain/game/Powerup')
-var players = {};
 const colors = ['0bed07', '200ee8', 'ed2009', 'db07eb', 'f56d05']
 
 const rooms = {

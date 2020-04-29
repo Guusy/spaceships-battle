@@ -91,14 +91,14 @@ window.Player = class Player {
         }
     }
 
-    updateBars() {
-        this.hp.x = x - 37
-        this.hp.y = y + 30
-        this.dash.x = this.hp.x
-        this.dash.y = this.hp.y + 5
-        this.dash.draw()
-        this.hp.draw()
-    }
+    // updateBars() {
+    //     this.hp.x = x - 37
+    //     this.hp.y = y + 30
+    //     this.dash.x = this.hp.x
+    //     this.dash.y = this.hp.y + 5
+    //     this.dash.draw()
+    //     this.hp.draw()
+    // }
 
     update(game) {
         this.calculatePowerUp(game)
@@ -215,6 +215,7 @@ window.Player = class Player {
         }
     }
 }
+// eslint-disable-next-line no-unused-vars
 class HealthBar {
 
     constructor(scene, x, y) {

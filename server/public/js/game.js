@@ -25,18 +25,16 @@ var config = {
     }
 };
 
-const sortPlayerByScore = (players) => players.sort((playerA, playerB) => playerB.score - playerA.score)
 
-var game = new Phaser.Game(config);
+new Phaser.Game(config); //const game = 
 
 var step = "SET_NAME"
-var room;
 var time = 0;
 var gameFinished = false
 let scoreboard;
 let player;
 
-const getPowerup = (key) => powerups[key]
+const getPowerup = (key) => window.powerups[key]
 
 function preload() {
     this.load.image('ship', 'assets/spaceShips_001.png');
@@ -130,7 +128,7 @@ function create() {
         }
 
         this.socket.on('renderMeteor', ({ id, x, y, scale, velocity }) => {
-            meteor = this.meteors.create(x, y, 'meteor')
+            const meteor = this.meteors.create(x, y, 'meteor')
             meteor.setScale(scale)
             this.meteors.add(meteor)
             meteor.setData('id', id)
@@ -237,7 +235,7 @@ function create() {
             enemy.setData('powerup', currentPowerup)
         });
 
-        this.socket.on('powerupActivated', ({ playerName, powerup }) => {
+        this.socket.on('powerupActivated', ({ playerName }) => { // powerup
             const enemy = this.findEnemyByName(playerName)
             enemy.getData('powerup').activateInEnemy(this, enemy)
         });

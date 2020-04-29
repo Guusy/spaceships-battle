@@ -19,7 +19,7 @@ window.ScoreBoard = class ScoreBoard {
         this.needsToUpdate = true
     }
 
-    update(game) {
+    update() { //game
         if (this.needsToUpdate) {
             this.getSortedScores().forEach((aPlayer, index) => {
                 const text = this.scoresTexts[index]

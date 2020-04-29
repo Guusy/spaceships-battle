@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node ./server/index.js",
-    "dev": "nodemon ./server/index.js"
+    "dev": "nodemon ./server/index.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +18,16 @@
     "socket.io": "^2.3.0"
   },
   "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-plugin-jest": "^23.8.2",
+    "husky": "^4.2.5",
+    "jest": "^25.5.0",
     "nodemon": "^2.0.3"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm test && npm run lint",
+      "pre-push": "npm test && npm run lint"
+    }
   }
 }
