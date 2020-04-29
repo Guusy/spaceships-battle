@@ -33,10 +33,12 @@ var time = 0;
 var gameFinished = false
 let scoreboard;
 let player;
+const enemies = []
 
 const getPowerup = (key) => window.powerups[key]
 
 function preload() {
+    // TODO : create another file to preload everything
     this.load.image('ship', 'assets/spaceShips_001.png');
     this.load.image('otherPlayer', 'assets/enemyBlack5.png');
     this.load.image('star', 'assets/star_gold.png');
@@ -117,17 +119,11 @@ function create() {
             this.physics.velocityFromRotation(rotation + 1.5, 3000, laser.body.acceleration);
         }
 
-        this.findEnemyByName = (name) => {
-            let enemy
-            this.otherPlayers.getChildren().forEach((otherPlayer) => {
-                if (name === otherPlayer.getData('playerName')) {
-                    enemy = otherPlayer
-                }
-            });
-            return enemy
-        }
+        this.findEnemyByName = (name) => enemies.find(enemy => enemy.data.playerName === name)
+        this.findEnemyBySocket = (socketId) => enemies.find(enemy => enemy.data.playerId === socketId)
 
         this.socket.on('renderMeteor', ({ id, x, y, scale, velocity }) => {
+            //TODO: create a domain object for this
             const meteor = this.meteors.create(x, y, 'meteor')
             meteor.setScale(scale)
             this.meteors.add(meteor)
@@ -135,37 +131,35 @@ function create() {
             meteor.body.velocity.y = velocity
         });
 
-        this.socket.on('currentPlayers', function (players) {
-            Object.keys(players).forEach(function (id) {
-                if (players[id].playerId === self.socket.id) {
-                    player = new Player(self, players[id])
+        this.socket.on('currentPlayers', (players) => {
+            Object.keys(players).forEach((id) => {
+                const currentPlayer = players[id]
+                if (currentPlayer.playerId === this.socket.id) {
+                    player = new Player(this, currentPlayer) //TODO: check if this make sense
                 } else {
-                    addOtherPlayers(self, players[id]);
+                    const enemy = new EnemyPlayer(this, currentPlayer)
+                    enemies.push(enemy)
                 }
             });
         });
 
-        this.socket.on('newPlayer', function (playerInfo) {
-            addOtherPlayers(self, playerInfo);
+        this.socket.on('newPlayer', (playerInfo) => {
+            const enemy = new EnemyPlayer(this, playerInfo)
+            enemies.push(enemy)
         });
 
-        this.socket.on('disconnect', function (playerId) {
-            self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-                if (playerId === otherPlayer.playerId) {
-                    otherPlayer.destroy();
-                }
-            });
+        this.socket.on('disconnect', (socketId) => {
+            //TODO: modify this
+            const enemy = this.findEnemyBySocket(socketId)
+            if (enemy) {
+                enemy.destroy()
+            }
         });
 
 
         this.socket.on('playerMoved', (playerInfo) => {
             const enemy = this.findEnemyByName(playerInfo.playerName)
-            enemy.setRotation(playerInfo.rotation);
-            enemy.setPosition(playerInfo.x, playerInfo.y);
-            const powerup = enemy.getData('powerup')
-            if (powerup && powerup.isActive) {
-                powerup.update(this, { ship: enemy })
-            }
+            enemy.updateMovement(playerInfo)
         });
 
         this.socket.on('scoreUpdate', function (newScores) {
@@ -177,6 +171,7 @@ function create() {
         });
 
         this.socket.on('starLocation', function (starLocation) {
+            //TODO: create a domain object for the start
             if (self.star) self.star.destroy();
             self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
             self.star.setTint(0x737373)
@@ -212,10 +207,11 @@ function create() {
 
         this.socket.on('removePlayer', (playerName) => {
             const enemy = this.findEnemyByName(playerName)
-            destroyPlayer(this, enemy)
+            enemy.destroy()
         })
 
         this.socket.on('renderPowerup', (powerup) => {
+            // TODO : use the domain object
             if (self.powerup) self.powerup.destroy();
             self.powerup = self.physics.add.image(powerup.x, powerup.y, powerup.icon);
             self.powerup.setData('type', powerup.type)
@@ -229,15 +225,16 @@ function create() {
         })
 
         this.socket.on('powerupCollected', ({ playerName, powerup }) => {
+            // TODO: check if this is neccesary
             const enemy = this.findEnemyByName(playerName)
             const Powerup = getPowerup(powerup.type)
             const currentPowerup = new Powerup()
-            enemy.setData('powerup', currentPowerup)
+            enemy.powerup = currentPowerup
         });
 
         this.socket.on('powerupActivated', ({ playerName }) => { // powerup
             const enemy = this.findEnemyByName(playerName)
-            enemy.getData('powerup').activateInEnemy(this, enemy)
+            enemy.activatePowerup()
         });
 
         this.socket.on('revivePlayer', (playerInfo) => {
@@ -245,7 +242,8 @@ function create() {
             if (isMe) {
                 player = new Player(self, playerInfo)
             } else {
-                addOtherPlayers(self, playerInfo);
+                this.findEnemyByName(playerInfo.playerName).revive(playerInfo)
+                // addOtherPlayers(self, playerInfo);
             }
         })
     }
@@ -289,39 +287,6 @@ function finishGame(self) {
     })
 }
 
-// Game functions of enemies TODO: Migrate to a domain object
-
-function addOtherPlayers(self, playerInfo) {
-    const otherPlayer = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'otherPlayer').setOrigin(0.5, 0.5).setDisplaySize(53, 40);
-    otherPlayer.setTint(0xff0000);
-    otherPlayer.playerId = playerInfo.playerId;
-    otherPlayer.setData('playerName', playerInfo.playerName)
-    otherPlayer.setCollideWorldBounds(true)
-    otherPlayer.setTint(0x737373)
-    self.otherPlayers.add(otherPlayer);
-
-    setTimeout(() => {
-        otherPlayer.setTint(`0x${playerInfo.color}`);
-        self.physics.add.overlap(otherPlayer, self.lasers, somethingHitsAEnemy, null, self)
-        self.physics.add.overlap(otherPlayer, self.meteors, somethingHitsAEnemy, null, self)
-    }, 2500)
-}
-
-// Player functionaniltiies 
-
-function destroyPlayer(self, player) {
-    const animation = self.physics.add.sprite(player.x, player.y, 'ship')
-    player.destroy()
-    animation.setTexture('sprExplosion')
-    animation.setScale(2.5, 2.5)
-    animation.play('sprExplosion')
-    animation.on('animationcomplete', () => {
-        if (animation) {
-            animation.destroy()
-        }
-    })
-}
-
 // Game functionalities
 
 function destroyAll(objectA, objectB) {
@@ -329,8 +294,3 @@ function destroyAll(objectA, objectB) {
     objectB.destroy()
 }
 
-// TODO: decide which one has the source of the true, the enemy or you
-function somethingHitsAEnemy(enemy, object) {
-    // destroyPlayer(this, enemy)
-    object.destroy()
-}

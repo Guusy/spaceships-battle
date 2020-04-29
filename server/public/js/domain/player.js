@@ -9,7 +9,6 @@ window.Player = class Player {
         this.ship.setAngularDrag(100);
         this.ship.setMaxVelocity(200);
         this.ship.setCollideWorldBounds(true)
-        this.ship.setData('playerName', playerInfo.playerName)
         this.ship.setTint(0x737373)
         // this.hp = new HealthBar(game);
         // this.dash = new HealthBar(game);

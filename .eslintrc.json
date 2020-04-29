@@ -19,7 +19,8 @@
         "createGame": "readonly",
         "formatMinutes": "readonly",
         "menu": "readonly",
-        "Latency": "readonly"
+        "Latency": "readonly",
+        "EnemyPlayer": "readonly"
 
     },
     "plugins": [

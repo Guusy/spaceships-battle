@@ -153,7 +153,7 @@ class ShieldWithTime extends PowerUp {
     activateInEnemy(game, enemyPlayer) {
         this.isActive = true
         this._createCircle(game)
-        this.update(game, { ship: enemyPlayer })
+        this.update(game, enemyPlayer)
         setTimeout(() => {
             this.destroy()
         }, this.ttl)
