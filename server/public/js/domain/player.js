@@ -1,6 +1,7 @@
 window.Player = class Player {
 
     constructor(game, playerInfo) {
+        this.game = game
         this.powerup;
         this.cooldownDash = 5000
         this.canDash = true
@@ -13,8 +14,8 @@ window.Player = class Player {
         // this.hp = new HealthBar(game);
         // this.dash = new HealthBar(game);
 
-        if (game.star) {
-            game.physics.add.overlap(this.ship, game.star, (_, star) => this.collectStar(game, star));
+        if (game.star.isRenderInThePage()) {
+            game.physics.add.overlap(this.ship, game.star.body, () => this.collectStar(game.star));
         }
         if (game.powerup) {
             game.physics.add.overlap(this.ship, game.powerup, (_, powerup) => this.collectPowerup(game, powerup));
@@ -42,9 +43,9 @@ window.Player = class Player {
         }, 2500)
     }
 
-    collectStar(game, star) {
+    collectStar(star) {
         star.destroy()
-        game.socket.emit('starCollected', this.connectionCredentials());
+        this.game.socket.emit('starCollected', this.connectionCredentials());
     }
 
     collectPowerup(game, powerup) {

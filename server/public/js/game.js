@@ -32,7 +32,6 @@ var step = "SET_NAME"
 var time = 0;
 var gameFinished = false
 let scoreboard;
-let player;
 const enemies = []
 
 const getPowerup = (key) => window.powerups[key]
@@ -87,7 +86,7 @@ function create() {
         this.lasers = this.physics.add.group()
         this.enemiesLasers = this.physics.add.group()
         this.meteors = this.physics.add.group()
-
+        this.star = new Star(this)
         self.physics.add.overlap(self.lasers, self.meteors, destroyAll, null, self)
         self.physics.add.overlap(self.enemiesLasers, self.meteors, destroyAll, null, self)
 
@@ -115,7 +114,7 @@ function create() {
             Object.keys(players).forEach((id) => {
                 const currentPlayer = players[id]
                 if (currentPlayer.playerId === this.socket.id) {
-                    player = new Player(this, currentPlayer) //TODO: check if this make sense
+                    this.player = new Player(this, currentPlayer) //TODO: check if this make sense
                 } else {
                     const enemy = new EnemyPlayer(this, currentPlayer)
                     enemies.push(enemy)
@@ -150,17 +149,8 @@ function create() {
             }
         });
 
-        this.socket.on('starLocation', function (starLocation) {
-            //TODO: create a domain object for the start
-            if (self.star) self.star.destroy();
-            self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
-            self.star.setTint(0x737373)
-            setTimeout(() => {
-                self.star.clearTint()
-                self.physics.add.overlap(player.ship,
-                    self.star,
-                    (_, star) => player.collectStar(self, star));
-            }, 3000)
+        this.socket.on('starLocation', (starLocation) => {
+            this.star.render(starLocation)
         });
 
         this.socket.on('playerShooted', ({ lasers }) => {
@@ -198,9 +188,9 @@ function create() {
             self.powerup.setTint(0x737373)
             setTimeout(() => {
                 self.powerup.clearTint()
-                self.physics.add.overlap(player.ship,
+                self.physics.add.overlap(this.player.ship,
                     self.powerup,
-                    (_, powerup) => player.collectPowerup(self, powerup));
+                    (_, powerup) => this.player.collectPowerup(self, powerup));
             }, 3000)
         })
 
@@ -218,9 +208,9 @@ function create() {
         });
 
         this.socket.on('revivePlayer', (playerInfo) => {
-            const isMe = playerInfo.playerName === player.data.playerName
+            const isMe = playerInfo.playerName === this.player.data.playerName
             if (isMe) {
-                player = new Player(self, playerInfo)
+                this.player = new Player(self, playerInfo)
             } else {
                 this.findEnemyByName(playerInfo.playerName).revive(playerInfo)
                 // addOtherPlayers(self, playerInfo);
@@ -234,8 +224,8 @@ function create() {
 
 function update() {
     if (step !== "SET_NAME") {
-        if (player && player.ship && player.ship.scene) {
-            player.update(this)
+        if (this.player && this.player.ship && this.player.ship.scene) {
+            this.player.update(this)
             if (scoreboard) {
                 scoreboard.update(this)
             }
