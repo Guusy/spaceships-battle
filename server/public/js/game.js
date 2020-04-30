@@ -181,17 +181,7 @@ function create() {
         })
 
         this.socket.on('renderPowerup', (powerup) => {
-            // TODO : use the domain object
-            if (self.powerup) self.powerup.destroy();
-            self.powerup = self.physics.add.image(powerup.x, powerup.y, powerup.icon);
-            self.powerup.setData('type', powerup.type)
-            self.powerup.setTint(0x737373)
-            setTimeout(() => {
-                self.powerup.clearTint()
-                self.physics.add.overlap(this.player.ship,
-                    self.powerup,
-                    (_, powerup) => this.player.collectPowerup(self, powerup));
-            }, 3000)
+            Powerup.render(this, powerup)
         })
 
         this.socket.on('powerupCollected', ({ playerName, powerup }) => {

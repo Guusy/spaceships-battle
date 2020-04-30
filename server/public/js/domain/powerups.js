@@ -1,8 +1,21 @@
-class PowerUp {
+class Powerup {
 
     constructor(type) {
         this.type = type
         this.isActive = false
+    }
+
+    static render(game, powerupInfo) {
+        if (game.powerup) game.powerup.destroy();
+        game.powerup = game.physics.add.image(powerupInfo.x, powerupInfo.y, powerupInfo.icon);
+        game.powerup.setData('type', powerupInfo.type)
+        game.powerup.setTint(0x737373)
+        setTimeout(() => {
+            game.powerup.clearTint()
+            game.physics.add.overlap(game.player.ship,
+                game.powerup,
+                (_, powerup) => game.player.collectPowerup(game, powerup));
+        }, 3000)
     }
 
     init() {
@@ -43,7 +56,8 @@ class PowerUp {
 
 }
 
-class AngularLaser extends PowerUp {
+window.Powerup = Powerup
+class AngularLaser extends Powerup {
 
     constructor() {
         super('AngularLaser')
@@ -106,7 +120,7 @@ class AngularLaser extends PowerUp {
     }
 }
 
-class ShieldWithTime extends PowerUp {
+class ShieldWithTime extends Powerup {
 
     constructor() {
         super('ShieldWithTime')
