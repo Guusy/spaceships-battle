@@ -101,13 +101,8 @@ function create() {
         this.findEnemyByName = (name) => enemies.find(enemy => enemy.data.playerName === name)
         this.findEnemyBySocket = (socketId) => enemies.find(enemy => enemy.data.playerId === socketId)
 
-        this.socket.on('renderMeteor', ({ id, x, y, scale, velocity }) => {
-            //TODO: create a domain object for this
-            const meteor = this.meteors.create(x, y, 'meteor')
-            meteor.setScale(scale)
-            this.meteors.add(meteor)
-            meteor.setData('id', id)
-            meteor.body.velocity.y = velocity
+        this.socket.on('renderMeteor', (meteor) => {
+            Meteor.render(this, meteor)
         });
 
         this.socket.on('currentPlayers', (players) => {

@@ -20,6 +20,10 @@
         "formatMinutes": "readonly",
         "menu": "readonly",
         "Latency": "readonly",
+        "preloadAssets": "readonly",
+        "Star": "readonly",
+        "Meteor": "readonly",
+        "Powerup": "readonly",
         "EnemyPlayer": "readonly"
 
     },
