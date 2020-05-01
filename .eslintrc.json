@@ -24,8 +24,8 @@
         "Star": "readonly",
         "Meteor": "readonly",
         "Powerup": "readonly",
-        "EnemyPlayer": "readonly"
-
+        "EnemyPlayer": "readonly",
+        "GenericPlayer": "readonly"
     },
     "plugins": [
         "jest"
