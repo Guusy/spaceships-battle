@@ -133,6 +133,7 @@ function create() {
 
         this.socket.on('playerMoved', (playerInfo) => {
             const enemy = this.findEnemyByName(playerInfo.playerName)
+            // TODO: add a if please
             enemy.updateMovement(playerInfo)
         });
 

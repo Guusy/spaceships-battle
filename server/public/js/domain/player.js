@@ -29,6 +29,8 @@ window.Player = class Player {
             room: game.room
         }
 
+        this.displayName = this.game.add.text(this.ship.x - 30, this.ship.y - 40, this.data.playerName)// creo texto
+
         setInterval(() => {
             this.canDash = true
         }, this.cooldownDash)
@@ -104,6 +106,12 @@ window.Player = class Player {
         this.calculatePowerUp(game)
         this.calculateMovement(game)
         this.calculateShoot(game)
+        this.calculateShipLayout()
+    }
+
+    calculateShipLayout() {
+        this.displayName.x = this.ship.x - 30
+        this.displayName.y = this.ship.y - 40
     }
 
     calculatePowerUp(game) {
@@ -196,6 +204,7 @@ window.Player = class Player {
     destroy(game) {
         const animation = game.physics.add.sprite(this.ship.x, this.ship.y, 'ship')
         this.ship.destroy()
+        this.displayName.destroy()
         // this.hp.destroy()
         this.checkPowerUpADestroy(game)
         animation.setTexture('sprExplosion')

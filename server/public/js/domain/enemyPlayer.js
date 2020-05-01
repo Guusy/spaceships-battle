@@ -18,6 +18,8 @@ window.EnemyPlayer = class EnemyPlayer {
         this.ship.setTint(0x737373)
         this.game.otherPlayers.add(this.ship);
 
+        this.displayName = this.game.add.text(this.ship.x - 30, this.ship.y - 40, this.data.playerName)// creo texto
+
         setTimeout(() => {
             this.ship.setTint(`0x${playerInfo.color}`);
             this.game.physics.add.overlap(this.ship, this.game.lasers, (_, object) => this.somethingHitsMe(object), null, this.game)
@@ -34,6 +36,8 @@ window.EnemyPlayer = class EnemyPlayer {
     updateMovement(newInfo) {
         this.ship.setRotation(newInfo.rotation);
         this.ship.setPosition(newInfo.x, newInfo.y);
+        this.displayName.x = this.ship.x - 30
+        this.displayName.y = this.ship.y - 40
         if (this.powerup && this.powerup.isActive) {
             this.powerup.update(this.game, this)
         }
@@ -51,6 +55,7 @@ window.EnemyPlayer = class EnemyPlayer {
     destroy() {
         const animation = this.game.physics.add.sprite(this.ship.x, this.ship.y, 'ship')
         this.ship.destroy()
+        this.displayName.destroy()
         animation.setTexture('sprExplosion')
         animation.setScale(2.5, 2.5)
         animation.play('sprExplosion')
