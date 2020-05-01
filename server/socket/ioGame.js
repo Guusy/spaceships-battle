@@ -1,5 +1,5 @@
 
-const { removePlayer } = require('../utils')
+const { removePlayer, randomIntFromInterval } = require('../utils')
 const Room = require('../domain/game/Room')
 const Player = require('../domain/game/Player')
 const Star = require('../domain/game/Star')
@@ -50,7 +50,7 @@ module.exports = (server) => {
                 playerName,
                 room,
                 playerId: socket.id,
-                color: roomObject.colors.shift(),
+                color: colors[randomIntFromInterval(0, colors.length - 1)],
             })
 
             roomObject.addPlayer(newPlayer);

@@ -51,7 +51,7 @@ function create() {
         repeat: 0
     })
     this.generateRandomId = () => '_' + Math.random().toString(36).substr(2, 9)
-
+    this.isRunning = false;
     const game = (props) => {
         this.room = props.room
         step = "PLAYING_GAME"
@@ -158,6 +158,7 @@ function create() {
         })
 
         this.socket.on('initTimmer', (starterTime) => {
+            this.isRunning = true
             time = starterTime / 1000
             setInterval(() => {
                 if (!gameFinished) {

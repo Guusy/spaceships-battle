@@ -149,7 +149,7 @@ window.Player = class Player {
     }
 
     calculateShoot(game) {
-        if (game.cursors.space.isDown && this.data.canShoot) {
+        if (game.cursors.space.isDown && this.data.canShoot && this.game.isRunning) {
             if (this.data.timerShootTick < this.data.timerShootDelay) {
                 this.data.timerShootTick += 1
             } else {
