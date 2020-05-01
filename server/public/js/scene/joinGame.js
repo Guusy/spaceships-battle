@@ -8,12 +8,18 @@ window.joinGame = (self, goToPlay) => () => {
             var room = this.getChildByName('roomField').value;
             if (playerName !== '' && room !== '') {
                 return fetch(`/rooms/${room}`)
-                    .then(response => {
-                        if (response.status === 200) {
-                            this.setVisible(false);
-                            return goToPlay({ playerName, room })
-                        }
-                        alert(`La sala ${room} no existe`)
+                    .then((response) => {
+                        return response.json()
+                            .then(data => {
+                                if (response.status === 200) {
+                                    if (data.players[playerName]) {
+                                        return alert(`El nombre ${playerName} ya existe en la sala`)
+                                    }
+                                    this.setVisible(false);
+                                    return goToPlay({ playerName, room })
+                                }
+                                alert(`La sala ${room} no existe`)
+                            })
                     })
             }
         }

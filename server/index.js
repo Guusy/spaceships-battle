@@ -21,6 +21,7 @@ app.get('/rooms/:id', (req, res) => {
   const { id } = req.params
   const room = game.getRooms()[id]
   if (room) {
+    delete room.meteorInterval
     return res.status(200).json(room)
   }
   return res.status(404).json({ message: 'This room does not exists' })
