@@ -3,8 +3,8 @@ var config = {
     parent: 'phaser-example',
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: 1600,
-    height: 900,
+    width: 800,
+    height: 500,
     dom: {
         createContainer: true
     },
@@ -197,10 +197,9 @@ function create() {
         this.socket.on('revivePlayer', (playerInfo) => {
             const isMe = playerInfo.playerName === this.player.data.playerName
             if (isMe) {
-                this.player = new Player(self, playerInfo)
+                this.player.revive(playerInfo)
             } else {
                 this.findEnemyByName(playerInfo.playerName).revive(playerInfo)
-                // addOtherPlayers(self, playerInfo);
             }
         })
     }
@@ -212,7 +211,7 @@ function create() {
 function update() {
     if (step !== "SET_NAME") {
         if (this.player && this.player.ship && this.player.ship.scene) {
-            this.player.update(this)
+            this.player.update()
             if (scoreboard) {
                 scoreboard.update(this)
             }

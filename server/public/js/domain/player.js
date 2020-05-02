@@ -1,48 +1,48 @@
-window.Player = class Player {
+window.Player = class Player extends GenericPlayer {
 
     constructor(game, playerInfo) {
-        this.game = game
-        this.powerup;
+        super(game, playerInfo)
         this.cooldownDash = 5000
         this.canDash = true
-        this.ship = game.physics.add.sprite(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(53, 40);
-        this.ship.setDrag(100);
-        this.ship.setAngularDrag(100);
-        this.ship.setMaxVelocity(200);
-        this.ship.setCollideWorldBounds(true)
-        this.ship.setTint(0x737373)
-        // this.hp = new HealthBar(game);
-        // this.dash = new HealthBar(game);
-
-        if (game.star.isRenderInThePage()) {
-            game.physics.add.overlap(this.ship, game.star.body, () => this.collectStar(game.star));
-        }
-        if (game.powerup) {
-            game.physics.add.overlap(this.ship, game.powerup, (_, powerup) => this.collectPowerup(game, powerup));
-        }
-
         this.data = {
-            ...playerInfo,
+            ...this.data,
+            // TODO: move this to outside the data
             timerShootDelay: 30,
             timerShootTick: 29,
             canShoot: false,
-            room: game.room
         }
+    }
 
-        this.displayName = this.game.add.text(this.ship.x - 30, this.ship.y - 40, this.data.playerName)// creo texto
+    getSprite() {
+        return 'ship'
+    }
 
+    doRender() {
+        this.ship.setDrag(100);
+        this.ship.setAngularDrag(100);
+        this.ship.setMaxVelocity(200);
+
+        if (this.game.star.isRenderInThePage()) {
+            this.game.physics.add.overlap(this.ship, this.game.star.body, () => this.collectStar(this.game.star));
+        }
+        if (this.game.powerup) {
+            this.game.physics.add.overlap(this.ship, this.game.powerup, (_, powerup) => this.collectPowerup(powerup));
+        }
         setInterval(() => {
             this.canDash = true
         }, this.cooldownDash)
+    }
 
-        setTimeout(() => {
-            this.ship.clearTint()
-            this.ship.setTint(`0x${playerInfo.color}`)
-            this.data.canShoot = true
+    removeSpawnProtection() {
+        this.data.canShoot = true
+        this.game.physics.add.overlap(this.ship, this.game.meteors, (_, meteor) => this.hitByMeteor(meteor))
+        this.game.physics.add.overlap(this.ship, this.game.enemiesLasers, (_, enemyLaser) => this.hitByEnemyLaser(enemyLaser));
+    }
 
-            game.physics.add.overlap(this.ship, game.meteors, (_, meteor) => this.hitByMeteor(game, meteor))
-            game.physics.add.overlap(this.ship, game.enemiesLasers, (_, enemyLaser) => this.hitByEnemyLaser(game, enemyLaser));
-        }, 2500)
+    doUpdate() {
+        this.calculatePowerupActivation()
+        this.calculateMovement()
+        this.calculateShoot()
     }
 
     collectStar(star) {
@@ -50,81 +50,52 @@ window.Player = class Player {
         this.game.socket.emit('starCollected', this.connectionCredentials());
     }
 
-    collectPowerup(game, powerup) {
+    collectPowerup(powerup) {
         if (!this.powerup) {
             this.powerup = new powerups[powerup.getData('type')]()
-            this.powerup.renderIcon(game)
+            this.powerup.renderIcon(this.game)
             powerup.destroy()
-            game.socket.emit('powerupCollected', { ...this.connectionCredentials(), powerup: this.powerup });
+            this.game.socket.emit('powerupCollected', { ...this.connectionCredentials(), powerup: this.powerup });
         }
     }
 
-    hitByMeteor(game, meteor) {
-        this.destroy(game)
+    hitByMeteor(meteor) {
+        this.destroy()
         meteor.destroy()
         const credentials = this.connectionCredentials()
-        game.socket.emit('killed', { killer: null, ...credentials })
+        this.game.socket.emit('killed', { killer: null, ...credentials })
     }
 
-    checkPowerUpActivation(game) {
-        if (this.powerup && !this.powerup.isActive) {
-            game.socket.emit('powerupActivated', { ...this.connectionCredentials(), powerup: this.powerup })
-            this.powerup.activate(game, this)
-        }
-    }
-
-    checkPowerUpAUpdate(game) {
-        if (this.powerup && this.powerup.isActive) {
-            this.powerup.update(game, this)
-        }
-    }
-
-    checkPowerUpADestroy(game) {
+    checkPowerUpADestroy() {
         if (this.powerup) {
-            this.powerup.destroy(game, this)
+            this.powerup.destroy(this.game, this)
             this.powerup = null
         }
     }
 
-    dash(game) {
+    dash() {
         if (this.canDash) {
             this.canDash = false
-            game.physics.velocityFromRotation(this.ship.rotation + 1.5, 30000, this.ship.body.acceleration);
+            this.game.physics.velocityFromRotation(this.ship.rotation + 1.5, 30000, this.ship.body.acceleration);
         }
     }
 
-    // updateBars() {
-    //     this.hp.x = x - 37
-    //     this.hp.y = y + 30
-    //     this.dash.x = this.hp.x
-    //     this.dash.y = this.hp.y + 5
-    //     this.dash.draw()
-    //     this.hp.draw()
-    // }
-
-    update(game) {
-        this.calculatePowerUp(game)
-        this.calculateMovement(game)
-        this.calculateShoot(game)
-        this.calculateShipLayout()
-    }
-
-    calculateShipLayout() {
-        this.displayName.x = this.ship.x - 30
-        this.displayName.y = this.ship.y - 40
-    }
-
-    calculatePowerUp(game) {
-        const { cursors } = game
+    calculatePowerupActivation() {
+        const { cursors } = this.game
         if (cursors.activatePowerup.isDown) {
-            this.checkPowerUpActivation(game)
+            this.activatePowerup()
         }
-
-        this.checkPowerUpAUpdate(game)
     }
 
-    calculateMovement(game) {
-        const { socket, cursors, physics } = game
+    activatePowerup() {
+        if (this.powerup && !this.powerup.isActive) {
+            this.game.socket.emit('powerupActivated', { ...this.connectionCredentials(), powerup: this.powerup })
+            this.powerup.activate(this.game, this)
+        }
+    }
+
+    calculateMovement() {
+        const { socket, cursors, physics } = this.game
 
         if (cursors.left.isDown) {
             this.ship.setAngularVelocity(-150);
@@ -141,7 +112,7 @@ window.Player = class Player {
         }
 
         if (cursors.dash.isDown && !cursors.up.isDown) {
-            this.dash(game)
+            this.dash()
         }
         // this.updateBars();
         // emit player movement
@@ -156,24 +127,25 @@ window.Player = class Player {
         this.ship.oldPosition = { x, y, rotation };
     }
 
-    calculateShoot(game) {
-        if (game.cursors.space.isDown && this.data.canShoot && this.game.isRunning) {
+    calculateShoot() {
+        const canShoot = this.game.cursors.space.isDown && this.data.canShoot && this.game.isRunning
+        if (canShoot) {
             if (this.data.timerShootTick < this.data.timerShootDelay) {
                 this.data.timerShootTick += 1
             } else {
-                game.sound.play('laserSound');
-                this.shoot(game)
+                this.game.sound.play('laserSound');
+                this.shoot()
                 this.data.timerShootTick = 0
             }
         }
     }
 
-    shoot(game) {
+    shoot() {
         const color = `0x${this.data.color}`
-        const id = game.generateRandomId()
-        this.renderLaser(game, { id, color })
+        const id = this.game.generateRandomId()
+        this.renderLaser({ id, color })
         const { room, playerName } = this.connectionCredentials()
-        game.socket.emit('shoot', {
+        this.game.socket.emit('shoot', {
             room,
             lasers: {
                 id,
@@ -188,95 +160,16 @@ window.Player = class Player {
     }
 
 
-    renderLaser(game, { id, color }) {
+    renderLaser({ id, color }) {
         const { x, y, rotation } = this.ship
         const { playerName } = this.data
-        game.renderLaser(game.lasers, { id, color, x, y, rotation, playerName })
+        this.game.renderLaser(this.game.lasers, { id, color, x, y, rotation, playerName })
     }
     // TODO: Unify with hit by meteor
-    hitByEnemyLaser(game, enemyLaser) {
-        this.destroy(game)
+    hitByEnemyLaser(enemyLaser) {
+        this.destroy()
         const credentials = this.connectionCredentials()
-        game.socket.emit('killed', { killer: enemyLaser.getData('playerName'), ...credentials })
+        this.game.socket.emit('killed', { killer: enemyLaser.getData('playerName'), ...credentials })
         enemyLaser.destroy()
     }
-
-    destroy(game) {
-        const animation = game.physics.add.sprite(this.ship.x, this.ship.y, 'ship')
-        this.ship.destroy()
-        this.displayName.destroy()
-        // this.hp.destroy()
-        this.checkPowerUpADestroy(game)
-        animation.setTexture('sprExplosion')
-        animation.setScale(2.5, 2.5)
-        animation.play('sprExplosion')
-        animation.on('animationcomplete', () => {
-            if (animation) {
-                animation.destroy()
-            }
-        })
-    }
-
-    connectionCredentials() {
-        return {
-            playerName: this.data.playerName,
-            room: this.data.room
-        }
-    }
-}
-// eslint-disable-next-line no-unused-vars
-class HealthBar {
-
-    constructor(scene, x, y) {
-        this.bar = new Phaser.GameObjects.Graphics(scene);
-
-        this.x = x;
-        this.y = y;
-        this.value = 100;
-        this.p = 76 / 100;
-
-        this.draw();
-
-        scene.add.existing(this.bar);
-    }
-
-    decrease(amount) {
-        this.value -= amount;
-
-        if (this.value < 0) {
-            this.value = 0;
-        }
-
-        this.draw();
-
-        return (this.value === 0);
-    }
-
-    draw() {
-        this.bar.clear();
-
-        //  BG
-        this.bar.fillStyle(0x000000);
-        this.bar.fillRect(this.x, this.y, 70, 3);
-
-        //  Health
-
-        this.bar.fillStyle(0xffffff);
-        this.bar.fillRect(this.x + 2, this.y + 2, 70, 3);
-
-        if (this.value < 30) {
-            this.bar.fillStyle(0xff0000);
-        } else {
-            this.bar.fillStyle(0x00ff00);
-        }
-
-        var d = Math.floor(this.p * this.value);
-
-        this.bar.fillRect(this.x + 2, this.y + 2, d, 3);
-    }
-
-    destroy() {
-        this.bar.destroy()
-    }
-
 }

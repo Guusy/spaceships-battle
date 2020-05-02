@@ -16,7 +16,6 @@ window.EnemyPlayer = class EnemyPlayer extends GenericPlayer {
     }
 
     removeSpawnProtection(){
-        this.ship.setTint(`0x${this.data.color}`);
         this.game.physics.add.overlap(this.ship, this.game.lasers, (_, object) => this.somethingHitsMe(object), null, this.game)
         // TODO: there is a bug with the first user of lobby
         this.game.physics.add.overlap(this.ship, this.game.meteors, (_, object) => this.somethingHitsMe(object), null, this.game)

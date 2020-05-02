@@ -14,7 +14,7 @@ class Powerup {
             game.powerup.clearTint()
             game.physics.add.overlap(game.player.ship,
                 game.powerup,
-                (_, powerup) => game.player.collectPowerup(game, powerup));
+                (_, powerup) => game.player.collectPowerup(powerup));
         }, 3000)
     }
 
@@ -80,7 +80,7 @@ class AngularLaser extends Powerup {
         // Laser modification
         setTimeout(() => {
             player.shoot = bkpShoot
-            player.checkPowerUpADestroy(game)
+            player.checkPowerUpADestroy()
         }, this.ttl)
 
         player.shoot = () => {
@@ -142,11 +142,11 @@ class ShieldWithTime extends Powerup {
         setTimeout(() => {
             player.hitByEnemyLaser = hitByEnemyLaserBKP
             player.hitByMeteor = hitByMeteorBKP
-            player.checkPowerUpADestroy(game)
+            player.checkPowerUpADestroy()
         }, this.ttl)
 
-        player.hitByEnemyLaser = (game, laser) => { laser.destroy() }
-        player.hitByMeteor = (game, meteor) => { meteor.destroy() }
+        player.hitByEnemyLaser = (laser) => { laser.destroy() }
+        player.hitByMeteor = (meteor) => { meteor.destroy() }
 
         this._createCircle(game)
     }
