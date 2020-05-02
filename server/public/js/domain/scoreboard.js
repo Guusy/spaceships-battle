@@ -19,7 +19,8 @@ window.ScoreBoard = class ScoreBoard {
         this.needsToUpdate = true
     }
 
-    update() { //game
+    update() { 
+        //TODO:  when a user disconnects, remove the text
         if (this.needsToUpdate) {
             this.getSortedScores().forEach((aPlayer, index) => {
                 const text = this.scoresTexts[index]

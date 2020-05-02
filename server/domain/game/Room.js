@@ -20,7 +20,7 @@ class Room {
         return !this.isRunning && this.quantityPlayers === currentPlayers
     }
 
-    initGame(io) {
+    initGame(io, finishCallback) {
         this.isRunning = true
         // Send to the users the real time, to manage in the client
         io.in(this.name).emit('initTimmer', this.time);
@@ -43,8 +43,8 @@ class Room {
         setTimeout(() => {
             console.log("We gonna finish the game", this.name)
             io.in(this.name).emit('finishGame');
-            clearInterval(this.meteorInterval)
-            // TODO: delete rooms[room] 
+            this.clearIntervalMeteorInterval()
+            finishCallback()
         }, this.time)
 
         // send the star object to the new player
@@ -91,6 +91,14 @@ class Room {
             const { score, color } = this.players[playerName]
             return { playerName, score, color }
         })
+    }
+
+    clearIntervalMeteorInterval(){
+        clearInterval(this.meteorInterval)
+    }
+
+    isEmpty() {
+        return Object.keys(this.players).length === 0
     }
 }
 

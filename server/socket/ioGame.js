@@ -1,5 +1,5 @@
 
-const { removePlayer, randomIntFromInterval } = require('../utils')
+const { removePlayer, randomIntFromInterval, getRoomBySocket } = require('../utils')
 const Room = require('../domain/game/Room')
 const Player = require('../domain/game/Player')
 const Star = require('../domain/game/Star')
@@ -21,6 +21,10 @@ const rooms = {
         width: 1000,
         colors
     })
+}
+
+const removeARoom = (room) => {
+    delete rooms[room]
 }
 
 module.exports = (server) => {
@@ -64,7 +68,9 @@ module.exports = (server) => {
             socket.in(room).emit('newPlayer', newPlayer);
 
             if (roomObject.isGameReady()) {
-                roomObject.initGame(io)
+                roomObject.initGame(io, () => {
+                    removeARoom(room)
+                })
             }
         })
 
@@ -142,13 +148,17 @@ module.exports = (server) => {
         socket.on('disconnect', function () {
             console.log('user disconnected', socket.id);
             // remove this player from our players object
-            // TODO: find in sockets
+            const currentRoom = getRoomBySocket(rooms, socket.id)
             removePlayer(rooms, socket.id)
-            // const gameIsReady = allPlayersAreInTheRoom({ players, rooms, room })
-            console.log('current rooms', rooms);
-            // TODO: Check if a room is empty to clear the interval
-            // emit a message to all players to remove this player
-            io.emit('disconnect', socket.id);
+            if (currentRoom) {
+                if (currentRoom.isEmpty()) {
+                    currentRoom.clearIntervalMeteorInterval()
+                    removeARoom(currentRoom.name)
+                } else {
+                    // emit a message to all players to remove this player
+                    io.in(currentRoom.name).emit('disconnect', socket.id);
+                }
+            }
         });
 
     });

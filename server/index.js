@@ -14,15 +14,20 @@ app.get('/', function (req, res) {
 
 
 app.get('/rooms', (req, res) => {
-  return res.status(200).json(game.getRooms())
+  const rooms = {...game.getRooms()}
+  Object.keys(rooms).forEach(roomkey => {
+    delete rooms[roomkey].meteorInterval
+  })
+  return res.status(200).json(rooms)
 })
 
 app.get('/rooms/:id', (req, res) => {
   const { id } = req.params
   const room = game.getRooms()[id]
   if (room) {
-    delete room.meteorInterval
-    return res.status(200).json(room)
+    // eslint-disable-next-line no-unused-vars
+    const { meteorInterval, ...response } = room
+    return res.status(200).json(response)
   }
   return res.status(404).json({ message: 'This room does not exists' })
 })
