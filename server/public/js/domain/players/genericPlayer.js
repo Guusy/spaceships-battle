@@ -31,14 +31,17 @@ window.GenericPlayer = class GenericPlayer {
     }
 
     render(playerInfo) {
-        this.ship = this.game.physics.add.sprite(playerInfo.x, playerInfo.y, this.getSprite())
+        const { x, y } = playerInfo
+        this.ship = this.game.physics.add.sprite(x, y, this.getSprite())
             .setOrigin(0.5, 0.5)
             .setDisplaySize(53, 40);
         this.ship.setCollideWorldBounds(true)
         this.ship.setTint(0x737373)
-        // this.hp = new HealthBar(game);
+        const hpPosition = this._calculateHpPosition(x, y)
+        const displayPosition = this._calculateDisplayPosition(x, y)
+        this.hp = new HealthBar(this.game, hpPosition.x, hpPosition.y);
         // this.dash = new HealthBar(game);
-        this.displayName = this.game.add.text(this.ship.x - 30, this.ship.y - 40, this.data.playerName)
+        this.displayName = this.game.add.text(displayPosition.x, displayPosition.y, this.data.playerName)
         this.doRender(playerInfo)
         setTimeout(() => {
             this.ship.clearTint()
@@ -58,28 +61,54 @@ window.GenericPlayer = class GenericPlayer {
         this.updatePowerup()
     }
 
+    isMe(name) {
+        return this.data.playerName === name
+    }
+
+    updateHp(newHp) {
+        this.hp.value = newHp
+        this.hp.draw()
+    }
+
     updatePowerup() {
         if (this.powerup && this.powerup.isActive) {
             this.powerup.update(this.game, this)
         }
     }
 
+    _calculateHpPosition(x, y) {
+        return {
+            x: x - 37,
+            y: y + 30
+        }
+    }
+
+    _calculateDisplayPosition(x, y) {
+        return {
+            x: x - 30,
+            y: y - 40
+        }
+    }
+
     updateShipLayout() {
-        this.displayName.x = this.ship.x - 30
-        this.displayName.y = this.ship.y - 40
-        // this.hp.x = x - 37
-        // this.hp.y = y + 30
+        const { x, y } = this.ship
+        const hpPosition = this._calculateHpPosition(x, y)
+        const displayPosition = this._calculateDisplayPosition(x, y)
+        this.displayName.x = displayPosition.x
+        this.displayName.y = displayPosition.y
+        this.hp.x = hpPosition.x
+        this.hp.y = hpPosition.y
         // this.dash.x = this.hp.x
         // this.dash.y = this.hp.y + 5
         // this.dash.draw()
-        // this.hp.draw()
+        this.hp.draw()
     }
 
     destroy() {
         const animation = this.game.physics.add.sprite(this.ship.x, this.ship.y, 'ship')
         this.ship.destroy()
         this.displayName.destroy()
-        // this.hp.destroy()
+        this.hp.destroy()
         animation.setTexture('sprExplosion')
         animation.setScale(2.5, 2.5)
         animation.play('sprExplosion')

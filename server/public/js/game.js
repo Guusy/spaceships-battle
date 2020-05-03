@@ -3,8 +3,8 @@ var config = {
     parent: 'phaser-example',
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: 800,
-    height: 500,
+    width: 1600,
+    height: 900,
     dom: {
         createContainer: true
     },
@@ -173,8 +173,21 @@ function create() {
         })
 
         this.socket.on('removePlayer', (playerName) => {
-            const enemy = this.findEnemyByName(playerName)
-            enemy.destroy()
+            if (this.player.isMe(playerName)) {
+                this.player.destroy()
+            } else {
+                const enemy = this.findEnemyByName(playerName)
+                enemy.destroy()
+            }
+        })
+
+        this.socket.on('updateHp', ({ playerName, hp }) => {
+            if (this.player.isMe(playerName)) {
+                this.player.updateHp(hp)
+            } else {
+                const enemy = this.findEnemyByName(playerName)
+                enemy.updateHp(hp)
+            }
         })
 
         this.socket.on('renderPowerup', (powerup) => {
@@ -195,8 +208,7 @@ function create() {
         });
 
         this.socket.on('revivePlayer', (playerInfo) => {
-            const isMe = playerInfo.playerName === this.player.data.playerName
-            if (isMe) {
+            if (this.player.isMe(playerInfo.playerName)) {
                 this.player.revive(playerInfo)
             } else {
                 this.findEnemyByName(playerInfo.playerName).revive(playerInfo)

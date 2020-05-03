@@ -5,7 +5,8 @@ const Star = require('./Star')
 
 class Room {
 
-    constructor({ name, quantityPlayers, time, colors, width }) {
+    constructor({ io, name, quantityPlayers, time, colors, width }) {
+        this.io = io
         this.name = name
         this.isRunning = false
         this.quantityPlayers = quantityPlayers
@@ -20,13 +21,13 @@ class Room {
         return !this.isRunning && this.quantityPlayers === currentPlayers
     }
 
-    initGame(io, finishCallback) {
+    initGame(finishCallback) {
         this.isRunning = true
         // Send to the users the real time, to manage in the client
-        io.in(this.name).emit('initTimmer', this.time);
+        this.io.in(this.name).emit('initTimmer', this.time);
 
         // send the current scores
-        io.in(this.name).emit('scoreUpdate', this.getScores());
+        this.io.in(this.name).emit('scoreUpdate', this.getScores());
 
         console.log('The game will finish in', this.time)
         // Calculate the finish of the game
@@ -36,26 +37,26 @@ class Room {
                 const meteor = new Meteor({
                     x: randomIntFromInterval(0, this.width),
                 })
-                io.in(this.name).emit('renderMeteor', meteor)
+                this.io.in(this.name).emit('renderMeteor', meteor)
             }
         }, 2000)
 
         setTimeout(() => {
             console.log("We gonna finish the game", this.name)
-            io.in(this.name).emit('finishGame');
+            this.io.in(this.name).emit('finishGame');
             this.clearIntervalMeteorInterval()
             finishCallback()
         }, this.time)
 
         // send the star object to the new player
         setTimeout(() => {
-            io.in(this.name).emit('starLocation', new Star());
+            this.io.in(this.name).emit('starLocation', new Star());
         }, 3000)
 
         // send the power up 
         setTimeout(() => {
             const powerUp = new Powerup()
-            io.in(this.name).emit('renderPowerup', powerUp);
+            this.io.in(this.name).emit('renderPowerup', powerUp);
         }, 6000)
     }
 
@@ -93,12 +94,35 @@ class Room {
         })
     }
 
-    clearIntervalMeteorInterval(){
+    hitPlayerWith({ playerName, hitter }) {
+        hitter.hit()
+        const currentPlayer = hitter.hitted
+        if (currentPlayer.isDead()) {
+            hitter.giveRewardsForTheKill(this)
+            this.io.to(this.name).emit('removePlayer', playerName)
+            this.io.emit('scoreUpdate', this.getScores());
+
+            setTimeout(() => {
+                currentPlayer.revive()
+                this.io.in(this.name).emit('revivePlayer', currentPlayer);
+            }, 1500)
+        } else {
+            this.io.in(this.name).emit('updateHp', { playerName: playerName, hp: currentPlayer.hp });
+        }
+    }
+
+    clearIntervalMeteorInterval() {
         clearInterval(this.meteorInterval)
     }
 
     isEmpty() {
         return Object.keys(this.players).length === 0
+    }
+
+    toJson() {
+        // eslint-disable-next-line no-unused-vars
+        const { meteorInterval, io, ...response } = this
+        return response
     }
 }
 

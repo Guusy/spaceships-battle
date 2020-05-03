@@ -60,10 +60,15 @@ window.Player = class Player extends GenericPlayer {
     }
 
     hitByMeteor(meteor) {
-        this.destroy()
         meteor.destroy()
         const credentials = this.connectionCredentials()
-        this.game.socket.emit('killed', { killer: null, ...credentials })
+        this.game.socket.emit('playerHitted', {
+            hitter: 'meteor',
+            hitted: {
+                ...credentials
+            },
+            room: credentials.room
+        })
     }
 
     checkPowerUpADestroy() {
@@ -167,9 +172,17 @@ window.Player = class Player extends GenericPlayer {
     }
     // TODO: Unify with hit by meteor
     hitByEnemyLaser(enemyLaser) {
-        this.destroy()
         const credentials = this.connectionCredentials()
-        this.game.socket.emit('killed', { killer: enemyLaser.getData('playerName'), ...credentials })
+        this.game.socket.emit('playerHitted', {
+            hitter: 'laser', // TODO: in the future get the type of laser
+            hitted: {
+                ...credentials
+            },
+            hitterMetadata: {
+                playerName: enemyLaser.getData('playerName')
+            },
+            room: credentials.room
+        })
         enemyLaser.destroy()
     }
 }

@@ -4,20 +4,22 @@ const Room = require('../domain/game/Room')
 const Player = require('../domain/game/Player')
 const Star = require('../domain/game/Star')
 const Powerup = require('../domain/game/Powerup')
+const HitterMapper = require('../domain/game/hitters/HitterMapper')
+
 const colors = ['0bed07', '200ee8', 'ed2009', 'db07eb', 'f56d05']
 
 const rooms = {
     debug: new Room({
         name: 'debug',
         quantityPlayers: 1,
-        time: 120000,
+        time: 320000,
         width: 1000,
         colors
     }),
     d_m: new Room({
         name: 'd_m',
         quantityPlayers: 2,
-        time: 60000,
+        time: 20000,
         width: 1000,
         colors
     })
@@ -27,8 +29,17 @@ const removeARoom = (room) => {
     delete rooms[room]
 }
 
+/**
+ * Returns a room.
+ * @param {string} roomKey - the key of the room.
+ * @returns {object} Room class
+ */
+const getRoomObject = (roomKey) => rooms[roomKey]
+
 module.exports = (server) => {
     const io = require('socket.io').listen(server);
+    rooms.debug.io = io // debug line
+    rooms.d_m.io = io // debug line
     io.on('connection', function (socket) {
         console.log('a user connected');
 
@@ -36,6 +47,7 @@ module.exports = (server) => {
         socket.on('createGame', ({ room, quantityPlayers, time, width }) => {
             const qPlayers = Number.parseInt(quantityPlayers, 10)
             rooms[room] = new Room({
+                io,
                 name: room,
                 quantityPlayers: qPlayers,
                 time: Number.parseFloat(time, 10) * 60000,
@@ -68,7 +80,7 @@ module.exports = (server) => {
             socket.in(room).emit('newPlayer', newPlayer);
 
             if (roomObject.isGameReady()) {
-                roomObject.initGame(io, () => {
+                roomObject.initGame(() => {
                     removeARoom(room)
                 })
             }
@@ -97,7 +109,7 @@ module.exports = (server) => {
         socket.on('starCollected', function ({ playerName, room }) {
             const roomObject = rooms[room]
             roomObject.updatePlayer(playerName, (player) => {
-                player.score += 15
+                player.score += 50
             })
             const star = new Star()
             io.emit('starLocation', star);
@@ -114,35 +126,13 @@ module.exports = (server) => {
             socket.to(room).emit('powerupActivated', { playerName, powerup })
         });
 
-        socket.on('killed', function ({ killer, playerName, room }) {
-            // TODO
-            // estrellas den 20  
-            // kill 30 y restan 20
-            // morir por meteoro 20
-            const roomObject = rooms[room]
+        socket.on('playerHitted', ({ hitted, hitter, hitterMetadata, room }) => {
+            const currentRoom = getRoomObject(room)
+            const currentPlayer = currentRoom.getPlayer(hitted.playerName)
+            const currentHitter = HitterMapper(hitter, { hitter: hitterMetadata, hitted: currentPlayer })
 
-            if (killer) {
-                roomObject.updatePlayer(killer, (player) => {
-                    player.score += 20
-                })
-            }
-
-            socket.to(room).emit('removePlayer', playerName)
-
-            roomObject.updatePlayer(playerName, (player) => {
-                const newScore = player.score - 20
-                player.score = (newScore >= 0) ? newScore : 0
-                player.x = Math.floor(Math.random() * 700) + 50
-                player.y = Math.floor(Math.random() * 500) + 50
-            })
-
-            io.emit('scoreUpdate', roomObject.getScores());
-            setTimeout(() => {
-                io.in(room).emit('revivePlayer', roomObject.getPlayer(playerName));
-            }, 1500)
-        });
-
-
+            currentRoom.hitPlayerWith({ playerName: hitted.playerName, hitter: currentHitter })
+        })
 
         // Disconnect action
         socket.on('disconnect', function () {
