@@ -21,7 +21,7 @@ window.Player = class Player extends GenericPlayer {
         this.ship.setDrag(100);
         this.ship.setAngularDrag(100);
         this.ship.setMaxVelocity(200);
-
+        this.data.canShoot = false;
         if (this.game.star.isRenderInThePage()) {
             this.game.physics.add.overlap(this.ship, this.game.star.body, () => this.collectStar(this.game.star));
         }

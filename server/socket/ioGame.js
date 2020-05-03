@@ -92,14 +92,16 @@ module.exports = (server) => {
 
         socket.on('playerMovement', function ({ x, y, rotation, playerName, room }) {
             const roomObject = rooms[room]
-            roomObject.updatePlayer(playerName, (player) => {
-                player.x = x;
-                player.y = y;
-                player.rotation = rotation;
-            })
+            if (roomObject) { // This if a player makes a movement when the game has already finish
+                roomObject.updatePlayer(playerName, (player) => {
+                    player.x = x;
+                    player.y = y;
+                    player.rotation = rotation;
+                })
 
-            // emit a message to all players about the player that moved
-            socket.to(room).emit('playerMoved', roomObject.getPlayer(playerName));
+                // emit a message to all players about the player that moved
+                socket.to(room).emit('playerMoved', roomObject.getPlayer(playerName));
+            }
         });
 
         socket.on('shoot', function ({ room, lasers }) {
