@@ -71,13 +71,6 @@ window.Player = class Player extends GenericPlayer {
         })
     }
 
-    checkPowerUpADestroy() {
-        if (this.powerup) {
-            this.powerup.destroy(this.game, this)
-            this.powerup = null
-        }
-    }
-
     dash() {
         if (this.canDash) {
             this.canDash = false

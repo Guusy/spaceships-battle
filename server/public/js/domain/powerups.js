@@ -71,16 +71,18 @@ class AngularLaser extends Powerup {
     init() { }
     update() { }
     activateInEnemy() { }
-    doDestroy() { }
+    doDestroy() {
+        this.restoreShoot()
+    }
 
     activate(game, player) {
         this.isActive = true
-        const bkpShoot = player.shoot
-
+        this.bkpShoot = player.shoot
+        this.player = player
         // Laser modification
         setTimeout(() => {
-            player.shoot = bkpShoot
-            player.checkPowerUpADestroy()
+            this.restoreShoot()
+            this.player.checkPowerUpADestroy()
         }, this.ttl)
 
         player.shoot = () => {
@@ -117,6 +119,12 @@ class AngularLaser extends Powerup {
             game.socket.emit('shoot', { room: baseProperties.room, lasers });
         }
 
+    }
+
+    restoreShoot() {
+        if (this.bkpShoot && this.player) {
+            this.player.shoot = this.bkpShoot
+        }
     }
 }
 

@@ -105,10 +105,11 @@ window.GenericPlayer = class GenericPlayer {
     }
 
     destroy() {
-        const animation = this.game.physics.add.sprite(this.ship.x, this.ship.y, 'ship')
+        const animation = this.game.physics.add.sprite(this.ship.x, this.ship.y, this.getSprite())
         this.ship.destroy()
         this.displayName.destroy()
         this.hp.destroy()
+        this.checkPowerUpADestroy()
         animation.setTexture('sprExplosion')
         animation.setScale(2.5, 2.5)
         animation.play('sprExplosion')
@@ -117,6 +118,13 @@ window.GenericPlayer = class GenericPlayer {
                 animation.destroy()
             }
         })
+    }
+
+    checkPowerUpADestroy() {
+        if (this.powerup) {
+            this.powerup.destroy(this.game, this)
+            this.powerup = null
+        }
     }
 
     connectionCredentials() {
