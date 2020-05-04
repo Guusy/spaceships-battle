@@ -9,9 +9,9 @@ class Meteor extends GenericHitter {
             if (diff <= 5) {
                 const lastHitter = room.getPlayer(playerName)
                 lastHitter.score += 25
-                this.hitted.decreaseScore(25)
             }
         }
+        this.hitted.decreaseScore(25)
     }
 
     hit() {

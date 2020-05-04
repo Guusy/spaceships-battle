@@ -127,6 +127,10 @@ window.GenericPlayer = class GenericPlayer {
         }
     }
 
+    get playerName(){
+        return this.data.playerName
+    }
+
     connectionCredentials() {
         return {
             playerId: this.data.playerId,

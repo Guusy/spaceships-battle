@@ -7,20 +7,27 @@ window.ScoreBoard = class ScoreBoard {
         let scorePosition = 32
         this.scoresTexts = scores.map(aPlayer => {
             scorePosition += 16
-            return game.add.text(64,
+            return game.add.text(24,
                 scorePosition,
                 aPlayer.playerName + ': ' + aPlayer.score,
                 { fontSize: '18px', fill: `#${aPlayer.color}` });
         })
     }
 
-    updateScores(newScores){
+    updateScores(newScores) {
         this.scores = newScores
         this.needsToUpdate = true
     }
 
-    update() { 
-        //TODO:  when a user disconnects, remove the text
+    removeScore(playerName) {
+        this.scores = this.scores.filter(score => score.playerName !== playerName)
+        const last = this.scoresTexts.pop()
+        last.destroy()
+        this.needsToUpdate = true
+        this.update()
+    }
+
+    update() {
         if (this.needsToUpdate) {
             this.getSortedScores().forEach((aPlayer, index) => {
                 const text = this.scoresTexts[index]

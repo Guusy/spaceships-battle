@@ -32,7 +32,7 @@ var step = "SET_NAME"
 var time = 0;
 var gameFinished = false
 let scoreboard;
-const enemies = []
+let enemies = []
 
 const getPowerup = (key) => window.powerups[key]
 
@@ -59,6 +59,11 @@ function create() {
 
         this.otherPlayers = this.physics.add.group();
         this.timer = this.add.text(584, 16, "Waiting for others players", { fontSize: '32px' });
+        this.playersQuantity = this.add.text(24, 16, `Room: ${this.room}`, { fontSize: '14px' });
+        this.playersQuantity = this.add.text(24, 30, `Players: ${enemies.length + 1}`, { fontSize: '14px' });
+        this.updatePlayersQuantity = () => {
+            this.playersQuantity.setText(`Players: ${enemies.length + 1}`)
+        }
         this.cursors = this.input.keyboard.addKeys({
             'up': Phaser.Input.Keyboard.KeyCodes.W,
             'down': Phaser.Input.Keyboard.KeyCodes.S,
@@ -115,18 +120,23 @@ function create() {
                     enemies.push(enemy)
                 }
             });
+            this.updatePlayersQuantity()
         });
 
         this.socket.on('newPlayer', (playerInfo) => {
             const enemy = new EnemyPlayer(this, playerInfo)
             enemies.push(enemy)
+            this.updatePlayersQuantity()
         });
 
         this.socket.on('disconnect', (socketId) => {
-            //TODO: modify this
-            const enemy = this.findEnemyBySocket(socketId)
-            if (enemy) {
-                enemy.destroy()
+            const enemyToDelete = this.findEnemyBySocket(socketId)
+            if (enemyToDelete) {
+                //TODO: Think if we need a domain object to put this logic
+                scoreboard.removeScore(enemyToDelete.playerName)
+                enemyToDelete.destroy()
+                enemies = enemies.filter(enemy => enemy.playerName !== enemyToDelete.playerName)
+                this.updatePlayersQuantity()
             }
         });
 
