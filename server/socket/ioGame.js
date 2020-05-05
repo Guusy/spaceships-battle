@@ -59,7 +59,6 @@ module.exports = (server) => {
         socket.on('enterGame', ({ playerName, room }) => {
             // create a new player and add it to our players object
             const roomObject = rooms[room]
-            console.log("EnterGame", playerName, 'room', roomObject, 'currentPlayers', roomObject.players)
 
             const newPlayer = new Player({
                 playerName,
@@ -134,8 +133,9 @@ module.exports = (server) => {
             const currentRoom = getRoomObject(room)
             const currentPlayer = currentRoom.getPlayer(hitted.playerName)
             const currentHitter = HitterMapper(hitter, { hitter: hitterMetadata, hitted: currentPlayer })
-
-            currentRoom.hitPlayerWith({ playerName: hitted.playerName, hitter: currentHitter })
+            if (!currentPlayer.isDead()) {
+                currentRoom.hitPlayerWith({ playerName: hitted.playerName, hitter: currentHitter })
+            }
         })
 
         // Disconnect action
