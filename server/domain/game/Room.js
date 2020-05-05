@@ -1,6 +1,7 @@
 const { randomIntFromInterval } = require('../../utils')
 const Meteor = require('./Meteor')
 const Powerup = require('./Powerup')
+const Heart = require('./Heart')
 const Star = require('./Star')
 
 class Room {
@@ -54,6 +55,7 @@ class Room {
         // send the star object to the new player
         setTimeout(() => {
             this.io.in(this.name).emit('starLocation', new Star());
+            this.io.in(this.name).emit('heartLocation', new Heart());
         }, 3000)
 
         // send the power up 

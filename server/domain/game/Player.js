@@ -21,6 +21,11 @@ class Player {
         this.hp = (difference >= 0) ? difference : 0
     }
 
+    increaseHp(amount) {
+        const difference = this.hp + amount
+        this.hp = (difference <= 100) ? difference : 100
+    }
+
     revive() {
         this.hp = 100
         this.x = Math.floor(Math.random() * 700) + 50
@@ -30,6 +35,10 @@ class Player {
     decreaseScore(amount) {
         const newScore = this.score - amount
         this.score = (newScore >= 0) ? newScore : 0
+    }
+
+    collect(collectable) {
+        collectable.applyModification(this)
     }
 }
 

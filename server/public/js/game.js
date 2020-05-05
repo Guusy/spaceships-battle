@@ -57,7 +57,7 @@ function create() {
         step = "PLAYING_GAME"
         console.log("start the game")
         if (props.isAdmin) {
-            this.initGameButton = this.add.text((config.width * 0.5) - 120, config.height - 70, `Init game`, { fontSize: '50px' });
+            this.initGameButton = this.add.text((config.width * 0.5) - 120, config.height - 70, `Start game`, { fontSize: '50px' });
             this.initGameButton.setInteractive({ useHandCursor: true })
                 .on('pointerup', () => {
                     this.initGameButton.destroy()
@@ -98,6 +98,7 @@ function create() {
         this.lasers = this.physics.add.group()
         this.enemiesLasers = this.physics.add.group()
         this.meteors = this.physics.add.group()
+        this.heart = new Heart(this)
         this.star = new Star(this)
         self.physics.add.overlap(self.lasers, self.meteors, destroyAll, null, self)
         self.physics.add.overlap(self.enemiesLasers, self.meteors, destroyAll, null, self)
@@ -115,6 +116,10 @@ function create() {
 
         this.socket.on('renderMeteor', (meteor) => {
             Meteor.render(this, meteor)
+        });
+
+        this.socket.on('heartLocation', (heartInfo) => {
+            this.heart.render(heartInfo)
         });
 
         this.socket.on('currentPlayers', (players) => {
@@ -232,7 +237,7 @@ function create() {
             }
         })
     }
-    // game({ playerName: 'gonzalo', room: 'debug' }) // debug mode
+    // game({ playerName: 'gonzalo', room: 'debug', isAdmin: true }) // debug mode
     menu(self, { joinGame: joinGame(self, game), createGame: createGame(self, game) })
 
 }

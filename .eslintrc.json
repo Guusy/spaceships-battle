@@ -25,6 +25,7 @@
         "Meteor": "readonly",
         "Powerup": "readonly",
         "EnemyPlayer": "readonly",
+        "Heart": "readonly",
         "GenericPlayer": "readonly"
     },
     "plugins": [

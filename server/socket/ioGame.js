@@ -4,6 +4,7 @@ const Room = require('../domain/game/Room')
 const Player = require('../domain/game/Player')
 const Star = require('../domain/game/Star')
 const Powerup = require('../domain/game/Powerup')
+const Heart = require('../domain/game/Heart')
 const HitterMapper = require('../domain/game/hitters/HitterMapper')
 
 const colors = ['0bed07', '200ee8', 'ed2009', 'db07eb', 'f56d05']
@@ -11,13 +12,14 @@ const colors = ['0bed07', '200ee8', 'ed2009', 'db07eb', 'f56d05']
 const rooms = {
     debug: new Room({
         name: 'debug',
-        quantityPlayers: 1,
+        admin: 'gonzalo',
         time: 320000,
         width: 1000,
         colors
     }),
     d_m: new Room({
         name: 'd_m',
+        admin: 'gonzalo',
         quantityPlayers: 2,
         time: 320000,
         width: 1000,
@@ -117,6 +119,16 @@ module.exports = (server) => {
             const star = new Star()
             io.emit('starLocation', star);
             io.emit('scoreUpdate', roomObject.getScores());
+        });
+
+        socket.on('heartCollected', function ({ playerName, room }) {
+            const roomObject = getRoomObject(room)
+            const currentPlayer = roomObject.getPlayer(playerName)
+            const heart = new Heart()
+            currentPlayer.collect(heart)
+
+            io.emit('heartLocation', heart);
+            io.in(room).emit('updateHp', { playerName: playerName, hp: currentPlayer.hp });
         });
 
         socket.on('powerupCollected', function ({ playerName, room, powerup }) {

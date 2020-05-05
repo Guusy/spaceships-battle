@@ -22,12 +22,6 @@ window.Player = class Player extends GenericPlayer {
         this.ship.setAngularDrag(100);
         this.ship.setMaxVelocity(200);
         this.data.canShoot = false;
-        if (this.game.star.isRenderInThePage()) {
-            this.game.physics.add.overlap(this.ship, this.game.star.body, () => this.collectStar(this.game.star));
-        }
-        if (this.game.powerup) {
-            this.game.physics.add.overlap(this.ship, this.game.powerup, (_, powerup) => this.collectPowerup(powerup));
-        }
         setInterval(() => {
             this.canDash = true
         }, this.cooldownDash)
@@ -35,6 +29,22 @@ window.Player = class Player extends GenericPlayer {
 
     removeSpawnProtection() {
         this.data.canShoot = true
+
+        if (this.game.star.isRenderInThePage()) {
+            // TODO: move this overlap logic to the domain object, to avoid duplicate code
+            this.game.physics.add.overlap(this.ship, this.game.star.body, () => this.collectStar(this.game.star));
+        }
+
+        if (this.game.heart.isRenderInThePage()) {
+            // TODO: move this overlap logic to the domain object, to avoid duplicate code
+            this.game.physics.add.overlap(this.ship, this.game.heart.body, () => this.collectHeart(this.game.heart));
+        }
+
+        if (this.game.powerup) {
+            // TODO: move this overlap logic to the domain object, to avoid duplicate code
+            this.game.physics.add.overlap(this.ship, this.game.powerup, (_, powerup) => this.collectPowerup(powerup));
+        }
+
         this.game.physics.add.overlap(this.ship, this.game.meteors, (_, meteor) => this.hitByMeteor(meteor))
         this.game.physics.add.overlap(this.ship, this.game.enemiesLasers, (_, enemyLaser) => this.hitByEnemyLaser(enemyLaser));
     }
@@ -48,6 +58,11 @@ window.Player = class Player extends GenericPlayer {
     collectStar(star) {
         star.destroy()
         this.game.socket.emit('starCollected', this.connectionCredentials());
+    }
+
+    collectHeart(heart) {
+        heart.destroy()
+        this.game.socket.emit('heartCollected', this.connectionCredentials());
     }
 
     collectPowerup(powerup) {
