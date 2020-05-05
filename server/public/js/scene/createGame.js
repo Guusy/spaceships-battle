@@ -6,15 +6,15 @@ window.createGame = (self, nextStep) => () => {
         if (event.target.name === 'createGame') {
             var playerName = this.getChildByName('nameField').value;
             var room = this.getChildByName('roomField').value;
-            var quantityPlayers = this.getChildByName('quantityField').value;
+            // var quantityPlayers = this.getChildByName('quantityField').value;
             var time = this.getChildByName('timeField').value;
-            if (playerName !== '' && room !== '' && quantityPlayers !== '' && time !== '') {
+            if (playerName !== '' && room !== '' && time !== '') {
                 return fetch(`/rooms/${room}`)
                     .then(response => {
                         if (response.status === 404) {
                             this.setVisible(false);
-                            self.socket.emit('createGame', { room, quantityPlayers, time, width: Number.parseInt(self.game.config.width, 10) })
-                            return nextStep({ playerName, room })
+                            self.socket.emit('createGame', { room, admin: playerName, time, width: Number.parseInt(self.game.config.width, 10) })
+                            return nextStep({ playerName, isAdmin: true, room })
                         }
                         alert(`La sala ${room} ya existe`)
                     })

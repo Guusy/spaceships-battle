@@ -19,7 +19,7 @@ const rooms = {
     d_m: new Room({
         name: 'd_m',
         quantityPlayers: 2,
-        time: 20000,
+        time: 320000,
         width: 1000,
         colors
     })
@@ -44,14 +44,13 @@ module.exports = (server) => {
         console.log('a user connected');
 
         // User create a game 
-        socket.on('createGame', ({ room, quantityPlayers, time, width }) => {
-            const qPlayers = Number.parseInt(quantityPlayers, 10)
+        socket.on('createGame', ({ room, time, admin, width }) => {
             rooms[room] = new Room({
                 io,
                 name: room,
-                quantityPlayers: qPlayers,
+                admin,
                 time: Number.parseFloat(time, 10) * 60000,
-                colors: colors.slice(0, qPlayers),
+                colors: colors,
                 width
             })
         })
@@ -78,9 +77,12 @@ module.exports = (server) => {
 
             // update all other players of the new player
             socket.in(room).emit('newPlayer', newPlayer);
+        })
 
-            if (roomObject.isGameReady()) {
-                roomObject.initGame(() => {
+        socket.on('initGame', ({ playerName, room }) => {
+            const currentRoom = getRoomObject(room)
+            if (currentRoom.isGameReady() && currentRoom.isAdmin(playerName)) {
+                currentRoom.initGame(() => {
                     removeARoom(room)
                 })
             }

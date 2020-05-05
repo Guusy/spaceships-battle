@@ -56,7 +56,14 @@ function create() {
         this.room = props.room
         step = "PLAYING_GAME"
         console.log("start the game")
-
+        if (props.isAdmin) {
+            this.initGameButton = this.add.text((config.width * 0.5) - 120, config.height - 70, `Init game`, { fontSize: '50px' });
+            this.initGameButton.setInteractive({ useHandCursor: true })
+                .on('pointerup', () => {
+                    this.initGameButton.destroy()
+                    this.socket.emit('initGame', this.player.connectionCredentials())
+                });
+        }
         this.otherPlayers = this.physics.add.group();
         this.timer = this.add.text(584, 16, "Waiting for others players", { fontSize: '32px' });
         this.playersQuantity = this.add.text(24, 16, `Room: ${this.room}`, { fontSize: '14px' });

@@ -5,11 +5,11 @@ const Star = require('./Star')
 
 class Room {
 
-    constructor({ io, name, quantityPlayers, time, colors, width }) {
+    constructor({ io, admin, name, time, colors, width }) {
         this.io = io
+        this.admin = admin
         this.name = name
         this.isRunning = false
-        this.quantityPlayers = quantityPlayers
         this.time = time
         this.colors = colors
         this.width = width
@@ -17,8 +17,11 @@ class Room {
     }
 
     isGameReady() {
-        const currentPlayers = Object.keys(this.players).length
-        return !this.isRunning && this.quantityPlayers === currentPlayers
+        return !this.isRunning
+    }
+
+    isAdmin(playerName) {
+        return this.admin === playerName
     }
 
     initGame(finishCallback) {
