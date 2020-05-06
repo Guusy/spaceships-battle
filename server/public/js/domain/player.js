@@ -120,7 +120,9 @@ window.Player = class Player extends GenericPlayer {
 
         if (cursors.up.isDown) {
             physics.velocityFromRotation(this.ship.rotation + 1.5, 500, this.ship.body.acceleration);
-        } else {
+        } else if (cursors.down.isDown) {
+            physics.velocityFromRotation(this.ship.rotation + 1.5, -500, this.ship.body.acceleration);
+        }else{
             this.ship.setAcceleration(0);
         }
 
