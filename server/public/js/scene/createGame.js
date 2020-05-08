@@ -1,5 +1,5 @@
 window.createGame = (self, nextStep) => () => {
-    var element = self.add.dom(self.game.config.width * 0.5, 0).createFromCache('createGame');
+    var element = self.add.dom(window.innerWidth / 2, 0).createFromCache('createGame');
 
     element.addListener('click');
     element.on('click', function (event) {

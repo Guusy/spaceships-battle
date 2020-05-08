@@ -9,7 +9,20 @@
             height: 100%;
             margin: 0;
             background-color: white;
-            padding-top: 10px;
+        }
+        #phaser-game {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #phaser-game>div, canvas {
+            max-width: 100%;
+            max-height: 100%;
+            margin: 0 !important;
+            padding: 0 !important;
+            
         }
     </style>
 </head>
@@ -33,6 +46,7 @@
     <script src="js/scene/createGame.js"></script>
     <script src="js/preloadAssets.js"></script>
     <script src="js/game.js"></script>
+
 </body>
 
 </html>

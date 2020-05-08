@@ -1,6 +1,6 @@
 var config = {
     type: Phaser.AUTO,
-    parent: 'phaser-example',
+    parent: 'phaser-game',
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: 1600,
@@ -57,7 +57,7 @@ function create() {
         step = "PLAYING_GAME"
         console.log("start the game")
         if (props.isAdmin) {
-            this.initGameButton = this.add.text((config.width * 0.5) - 120, config.height - 70, `Start game`, { fontSize: '50px' });
+            this.initGameButton = this.add.text(window.innerWidth / 2, window.innerHeight * 0.7, `Start game`, { fontSize: '50px' });
             this.initGameButton.setInteractive({ useHandCursor: true })
                 .on('pointerup', () => {
                     this.initGameButton.destroy()
