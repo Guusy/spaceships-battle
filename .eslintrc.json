@@ -26,6 +26,8 @@
         "Powerup": "readonly",
         "EnemyPlayer": "readonly",
         "Heart": "readonly",
+        "laserMapper": "readonly",
+        "SlowLaser": "readonly",
         "GenericPlayer": "readonly"
     },
     "plugins": [
