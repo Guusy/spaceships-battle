@@ -3,7 +3,7 @@ const app = express();
 const server = require('http').Server(app);
 const port = process.env.PORT || 8081
 const ioGame = require('./socket/ioGame')
-
+const reload = require('reload');
 const game = ioGame(server)
 
 app.use(express.static(__dirname + '/public'));
@@ -34,3 +34,5 @@ app.get('/rooms/:id', (req, res) => {
 server.listen(port, function () {
   console.log(`Listening on ${server.address().port}`);
 });
+
+reload(app);
