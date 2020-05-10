@@ -2,6 +2,8 @@ window.Player = class Player extends GenericPlayer {
 
     constructor(game, playerInfo) {
         super(game, playerInfo)
+        this.cooldownDash = 2000
+        this.lastDash = 0
         this.velocity = 500
         this.data = {
             ...this.data,
