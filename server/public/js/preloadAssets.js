@@ -1,5 +1,6 @@
 window.preloadAssets = (game) => {
     game.load.image('ship', 'assets/spaceShips_001.png');
+    game.load.image('slowLaser', 'assets/slowLaser.png');
     game.load.image('otherPlayer', 'assets/enemyBlack5.png');
     game.load.image('star', 'assets/star_gold.png');
     game.load.image('heart', 'assets/heart.png');

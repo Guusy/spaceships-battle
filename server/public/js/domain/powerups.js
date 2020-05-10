@@ -195,7 +195,55 @@ class ShieldWithTime extends Powerup {
     }
 }
 
+class ShootSlowLaser extends Powerup {
+
+    constructor() {
+        super('ShootSlowLaser')
+        this.ttl = 5000
+    }
+
+    getIcon() {
+        return 'slowLaser'
+    }
+
+    init() {
+
+    }
+
+    activateInEnemy() {
+        // Render the powerup
+    }
+
+    activate(game, player) {
+        this.isActive = true
+        this.player = player
+        this.bkpShoot = player.shoot
+        // cambiar la forma que dispara
+        player.shoot = player.shoot.bind(player, 'slow')
+
+        setTimeout(() => {
+            this.restoreShoot()
+            this.player.checkPowerUpADestroy()
+        }, this.ttl)
+    }
+
+    update() {
+
+    }
+
+    doDestroy() {
+        this.restoreShoot()
+    }
+
+    restoreShoot() {
+        if (this.bkpShoot && this.player) {
+            this.player.shoot = this.bkpShoot
+        }
+    }
+}
+
 window.powerups = {
     AngularLaser,
     ShieldWithTime,
+    ShootSlowLaser
 }

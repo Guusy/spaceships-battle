@@ -103,11 +103,12 @@ function create() {
         self.physics.add.overlap(self.lasers, self.meteors, destroyAll, null, self)
         self.physics.add.overlap(self.enemiesLasers, self.meteors, destroyAll, null, self)
 
-        this.renderLaser = (group, { x, y, color, rotation, playerName }) => {
+        this.renderLaser = (group, { x, y, type, color, rotation, playerName }) => {
             var laser = group.create(x, y, 'laser');
             laser.setTint(color)
             laser.rotation = rotation
             laser.setData('playerName', playerName)
+            laser.setData('type', type || 'default')
             this.physics.velocityFromRotation(rotation + 1.5, 3000, laser.body.acceleration);
         }
 

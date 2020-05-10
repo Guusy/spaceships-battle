@@ -6,5 +6,9 @@ module.exports = [
     {
         type: 'ShieldWithTime',
         icon: 'shieldWithTime'
+    },
+    {
+        type: 'ShootSlowLaser',
+        icon: 'slowLaser'
     }
 ]

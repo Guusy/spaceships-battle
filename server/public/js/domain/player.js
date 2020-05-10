@@ -2,8 +2,7 @@ window.Player = class Player extends GenericPlayer {
 
     constructor(game, playerInfo) {
         super(game, playerInfo)
-        this.cooldownDash = 2000
-        this.lastDash = 0
+        this.velocity = 500
         this.data = {
             ...this.data,
             // TODO: move this to outside the data
@@ -116,13 +115,14 @@ window.Player = class Player extends GenericPlayer {
         } else {
             this.ship.setAngularVelocity(0);
         }
+ 
         this.ship.setMaxVelocity(200);
         if (time < this.lastDash + 200) {
             this.ship.setMaxVelocity(500);
         } else if (cursors.up.isDown) {
-            physics.velocityFromRotation(this.ship.rotation + Math.PI / 2, 500, this.ship.body.acceleration);
+            physics.velocityFromRotation(this.ship.rotation + Math.PI / 2, this.velocity, this.ship.body.acceleration);
         } else if (cursors.down.isDown) {
-            physics.velocityFromRotation(this.ship.rotation + Math.PI / 2, -500, this.ship.body.acceleration);
+            physics.velocityFromRotation(this.ship.rotation + Math.PI / 2, -this.velocity, this.ship.body.acceleration);
         } else{
             this.ship.setAcceleration(0);
         }
@@ -157,7 +157,7 @@ window.Player = class Player extends GenericPlayer {
         }
     }
 
-    shoot() {
+    shoot(type = 'default') {
         const color = `0x${this.data.color}`
         const id = this.game.generateRandomId()
         this.renderLaser({ id, color })
@@ -166,6 +166,7 @@ window.Player = class Player extends GenericPlayer {
             room,
             lasers: {
                 id,
+                type,
                 x: this.ship.x,
                 y: this.ship.y,
                 rotation: this.ship.rotation,
@@ -185,6 +186,8 @@ window.Player = class Player extends GenericPlayer {
     // TODO: Unify with hit by meteor
     hitByEnemyLaser(enemyLaser) {
         const credentials = this.connectionCredentials()
+        const currentLaser = laserMapper(enemyLaser.getData('type'))
+        currentLaser.applyIn(this)
         this.game.socket.emit('playerHitted', {
             hitter: 'laser', // TODO: in the future get the type of laser
             hitted: {
@@ -196,5 +199,14 @@ window.Player = class Player extends GenericPlayer {
             room: credentials.room
         })
         enemyLaser.destroy()
+    }
+
+    slowVelocity(amount) {
+        const difference = this.velocity - amount
+        this.velocity = (difference > 50) ? difference : 50
+    }
+
+    restoreDefaultVelocity() {
+        this.velocity = 500
     }
 }
