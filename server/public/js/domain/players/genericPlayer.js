@@ -32,6 +32,7 @@ window.GenericPlayer = class GenericPlayer {
 
     render(playerInfo) {
         const { x, y } = playerInfo
+        this.createAccelerationParticles()
         this.ship = this.game.physics.add.sprite(x, y, this.getSprite())
             .setOrigin(0.5, 0.5)
             .setDisplaySize(53, 40);
@@ -48,6 +49,42 @@ window.GenericPlayer = class GenericPlayer {
             this.ship.setTint(`0x${playerInfo.color}`)
             this.removeSpawnProtection()
         }, 2500)
+        this.emitter.startFollow(this.ship);
+        
+    }
+
+    createAccelerationParticles() {
+        this.particles = this.game.add.particles('space');
+        this.emitter = this.particles.createEmitter({
+            frame: 'blue',
+            speed: 100,
+            lifespan: {
+                onEmit: () => Phaser.Math.Percent(this.ship.body.acceleration.length(), 0, 1500) * 500 * 3
+            },
+            alpha: {
+                onEmit: () => Phaser.Math.Percent(this.ship.body.acceleration.length(), 0, 500)
+            },
+            angle: {
+                onEmit: () => (this.ship.angle - 90) + Phaser.Math.Between(-10, 10)
+            },
+            scaleX: {
+                onEmit: (particle) => particle.initialScale = Phaser.Math.Percent(this.ship.body.acceleration.length(), 0, 1500),
+                onUpdate: ({initialScale}, _name, life) => initialScale * (1 - life)
+            },
+            scaleY: {
+                onEmit: ({initialScale}) => initialScale,
+                onUpdate: ({initialScale}, _name, life) => initialScale * (1 - life)
+            },
+            blendMode: 'ADD',
+            x: {
+                onEmit: () => 20 * Math.cos((this.ship.angle - 90) * Math.PI / 180)
+            },
+            y: {
+                onEmit: () =>  20 * Math.sin((this.ship.angle - 90) * Math.PI / 180)
+            },
+        });
+        console.log(this.emitter);
+
     }
 
     revive(playerInfo) {
@@ -55,8 +92,8 @@ window.GenericPlayer = class GenericPlayer {
         this.render(playerInfo)
     }
 
-    update() {
-        this.doUpdate()
+    update(time, delta) {
+        this.doUpdate(time, delta)
         this.updateShipLayout()
         this.updatePowerup()
     }
@@ -106,6 +143,7 @@ window.GenericPlayer = class GenericPlayer {
 
     destroy() {
         const animation = this.game.physics.add.sprite(this.ship.x, this.ship.y, this.getSprite())
+        this.emitter.stop()
         this.ship.destroy()
         this.displayName.destroy()
         this.hp.destroy()

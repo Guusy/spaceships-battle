@@ -2,8 +2,8 @@ window.Player = class Player extends GenericPlayer {
 
     constructor(game, playerInfo) {
         super(game, playerInfo)
-        this.cooldownDash = 5000
-        this.canDash = true
+        this.cooldownDash = 2000
+        this.lastDash = 0
         this.data = {
             ...this.data,
             // TODO: move this to outside the data
@@ -22,9 +22,6 @@ window.Player = class Player extends GenericPlayer {
         this.ship.setAngularDrag(100);
         this.ship.setMaxVelocity(200);
         this.data.canShoot = false;
-        setInterval(() => {
-            this.canDash = true
-        }, this.cooldownDash)
     }
 
     removeSpawnProtection() {
@@ -49,9 +46,9 @@ window.Player = class Player extends GenericPlayer {
         this.game.physics.add.overlap(this.ship, this.game.enemiesLasers, (_, enemyLaser) => this.hitByEnemyLaser(enemyLaser));
     }
 
-    doUpdate() {
+    doUpdate(time, delta) {
         this.calculatePowerupActivation()
-        this.calculateMovement()
+        this.calculateMovement(time, delta)
         this.calculateShoot()
     }
 
@@ -75,7 +72,8 @@ window.Player = class Player extends GenericPlayer {
     }
 
     hitByMeteor(meteor) {
-        meteor.destroy()
+        meteor.destroy();
+        this.game.cameras.main.shake(250, 0.006, false);
         const credentials = this.connectionCredentials()
         this.game.socket.emit('playerHitted', {
             hitter: 'meteor',
@@ -86,10 +84,11 @@ window.Player = class Player extends GenericPlayer {
         })
     }
 
-    dash() {
-        if (this.canDash) {
-            this.canDash = false
-            this.game.physics.velocityFromRotation(this.ship.rotation + 1.5, 30000, this.ship.body.acceleration);
+    dash(time) {
+        if (time > this.lastDash + this.cooldownDash) {
+            this.lastDash = time;
+            this.game.physics.velocityFromRotation(this.ship.rotation + Math.PI / 2, 10000, this.ship.body.acceleration);
+            this.ship.setMaxVelocity(500);
         }
     }
 
@@ -107,7 +106,7 @@ window.Player = class Player extends GenericPlayer {
         }
     }
 
-    calculateMovement() {
+    calculateMovement(time) {
         const { socket, cursors, physics } = this.game
 
         if (cursors.left.isDown) {
@@ -117,17 +116,20 @@ window.Player = class Player extends GenericPlayer {
         } else {
             this.ship.setAngularVelocity(0);
         }
-
-        if (cursors.up.isDown) {
-            physics.velocityFromRotation(this.ship.rotation + 1.5, 500, this.ship.body.acceleration);
+        this.ship.setMaxVelocity(200);
+        if (time < this.lastDash + 200) {
+            this.ship.setMaxVelocity(500);
+        } else if (cursors.up.isDown) {
+            physics.velocityFromRotation(this.ship.rotation + Math.PI / 2, 500, this.ship.body.acceleration);
         } else if (cursors.down.isDown) {
-            physics.velocityFromRotation(this.ship.rotation + 1.5, -500, this.ship.body.acceleration);
-        }else{
+            physics.velocityFromRotation(this.ship.rotation + Math.PI / 2, -500, this.ship.body.acceleration);
+        } else{
             this.ship.setAcceleration(0);
         }
+        
 
-        if (cursors.dash.isDown && !cursors.up.isDown) {
-            this.dash()
+        if (cursors.dash.isDown) {
+            this.dash(time)
         }
         // this.updateBars();
         // emit player movement
