@@ -83,8 +83,6 @@ window.GenericPlayer = class GenericPlayer {
                 onEmit: () =>  20 * Math.sin((this.ship.angle - 90) * Math.PI / 180)
             },
         });
-        console.log(this.emitter);
-
     }
 
     revive(playerInfo) {
