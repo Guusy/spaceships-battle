@@ -24,6 +24,8 @@ window.EnemyPlayer = class EnemyPlayer extends GenericPlayer {
     updateMovement(newInfo) {
         this.ship.setRotation(newInfo.rotation);
         this.ship.setPosition(newInfo.x, newInfo.y);
+        this.ship.body.acceleration.setFromObject(newInfo.acceleration);
+        this.ship.body.velocity.setFromObject(newInfo.velocity);
         this.update()
     }
 

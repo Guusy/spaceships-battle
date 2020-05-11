@@ -135,15 +135,18 @@ window.Player = class Player extends GenericPlayer {
         }
         // this.updateBars();
         // emit player movement
-        const { x, y, rotation } = this.ship
+        const { x, y, rotation, body } = this.ship
         const { oldPosition } = this.ship
+        const acceleration = {...body.acceleration};
+        const velocity = {...body.velocity};
         if (oldPosition &&
-            (x !== oldPosition.x || y !== oldPosition.y || rotation !== oldPosition.rotation)) {
-            socket.emit('playerMovement', { x, y, rotation, ...this.connectionCredentials() });
+            (x !== oldPosition.x || y !== oldPosition.y || rotation !== oldPosition.rotation ||
+                acceleration.x !== oldPosition.acceleration.x || acceleration.y !== oldPosition.acceleration.y)) {                
+                socket.emit('playerMovement', { x, y, rotation, acceleration, velocity,...this.connectionCredentials() });
         }
 
         // save old position data
-        this.ship.oldPosition = { x, y, rotation };
+        this.ship.oldPosition = { x, y, rotation, acceleration, velocity };
     }
 
     calculateShoot() {

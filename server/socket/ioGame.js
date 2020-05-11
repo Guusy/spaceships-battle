@@ -93,13 +93,15 @@ module.exports = (server) => {
             socket.emit('getPong', id)
         })
 
-        socket.on('playerMovement', function ({ x, y, rotation, playerName, room }) {
+        socket.on('playerMovement', function ({ x, y, rotation, acceleration, velocity, playerName, room }) {
             const roomObject = rooms[room]
             if (roomObject) { // This if a player makes a movement when the game has already finish
                 roomObject.updatePlayer(playerName, (player) => {
                     player.x = x;
                     player.y = y;
                     player.rotation = rotation;
+                    player.acceleration = acceleration;
+                    player.velocity = velocity;
                 })
 
                 // emit a message to all players about the player that moved
