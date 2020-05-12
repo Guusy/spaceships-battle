@@ -19,9 +19,6 @@ window.Player = class Player extends GenericPlayer {
     }
 
     doRender() {
-        this.ship.setDrag(100);
-        this.ship.setAngularDrag(100);
-        this.ship.setMaxVelocity(200);
         this.data.canShoot = false;
     }
 
@@ -89,7 +86,7 @@ window.Player = class Player extends GenericPlayer {
         if (time > this.lastDash + this.cooldownDash) {
             this.lastDash = time;
             this.game.physics.velocityFromRotation(this.ship.rotation + Math.PI / 2, 10000, this.ship.body.acceleration);
-            this.ship.setMaxVelocity(500);
+            this.ship.body.setMaxSpeed(700);
         }
     }
 
@@ -118,9 +115,9 @@ window.Player = class Player extends GenericPlayer {
             this.ship.setAngularVelocity(0);
         }
  
-        this.ship.setMaxVelocity(200);
+        this.ship.body.setMaxSpeed(300);
         if (time < this.lastDash + 200) {
-            this.ship.setMaxVelocity(500);
+            this.ship.body.setMaxSpeed(700);
         } else if (cursors.up.isDown) {
             physics.velocityFromRotation(this.ship.rotation + Math.PI / 2, this.velocity, this.ship.body.acceleration);
         } else if (cursors.down.isDown) {
@@ -135,18 +132,19 @@ window.Player = class Player extends GenericPlayer {
         }
         // this.updateBars();
         // emit player movement
-        const { x, y, rotation, body } = this.ship
-        const { oldPosition } = this.ship
+        const { x, y, rotation, body, oldPosition } = this.ship;
         const acceleration = {...body.acceleration};
         const velocity = {...body.velocity};
+        const { maxSpeed } = body;
+        
         if (oldPosition &&
-            (x !== oldPosition.x || y !== oldPosition.y || rotation !== oldPosition.rotation ||
+            (rotation !== oldPosition.rotation || maxSpeed !== oldPosition.maxSpeed ||
                 acceleration.x !== oldPosition.acceleration.x || acceleration.y !== oldPosition.acceleration.y)) {                
-                socket.emit('playerMovement', { x, y, rotation, acceleration, velocity,...this.connectionCredentials() });
+                socket.emit('playerMovement', { x, y, rotation, acceleration, velocity, maxSpeed, ...this.connectionCredentials() });
         }
 
         // save old position data
-        this.ship.oldPosition = { x, y, rotation, acceleration, velocity };
+        this.ship.oldPosition = { x, y, rotation, acceleration, velocity, maxSpeed };
     }
 
     calculateShoot() {

@@ -31,8 +31,8 @@ app.get('/rooms/:id', (req, res) => {
   return res.status(404).json({ message: 'This room does not exists' })
 })
 
+reload(app);
+
 server.listen(port, function () {
   console.log(`Listening on ${server.address().port}`);
 });
-
-reload(app);

@@ -247,6 +247,7 @@ function update(update_time, delta) {
     if (step !== "SET_NAME") {
         if (this.player && this.player.ship && this.player.ship.scene) {
             this.player.update(update_time, delta)
+            enemies.forEach(enemy => enemy.update(update_time, delta))
             if (scoreboard) {
                 scoreboard.update(this)
             }

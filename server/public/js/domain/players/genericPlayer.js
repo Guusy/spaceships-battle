@@ -38,19 +38,23 @@ window.GenericPlayer = class GenericPlayer {
             .setDisplaySize(53, 40);
         this.ship.setCollideWorldBounds(true)
         this.ship.setTint(0x737373)
+        this.ship.setDrag(100);
+        this.ship.setAngularDrag(100);
+        this.ship.body.setMaxSpeed(300);        
         const hpPosition = this._calculateHpPosition(x, y)
         const displayPosition = this._calculateDisplayPosition(x, y)
         this.hp = new HealthBar(this.game, hpPosition.x, hpPosition.y);
         // this.dash = new HealthBar(game);
         this.displayName = this.game.add.text(displayPosition.x, displayPosition.y, this.data.playerName)
+
         this.doRender(playerInfo)
+
         setTimeout(() => {
             this.ship.clearTint()
             this.ship.setTint(`0x${playerInfo.color}`)
             this.removeSpawnProtection()
         }, 2500)
         this.emitter.startFollow(this.ship);
-        
     }
 
     createAccelerationParticles() {
