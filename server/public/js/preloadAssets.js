@@ -21,4 +21,5 @@ window.preloadAssets = (game) => {
     game.load.audio('laserSound', 'assets/audio/laser.ogg', {
         instances: 1
     });
+    game.load.atlas('space', 'assets/space.png', 'assets/space.json');
 }

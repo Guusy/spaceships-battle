@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node ./server/index.js",
-    "dev": "nodemon ./server/index.js",
+    "dev": "nodemon ./server/index.js -e html,js,css",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "jest"
@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
+    "reload": "^3.0.4",
     "socket.io": "^2.3.0"
   },
   "devDependencies": {

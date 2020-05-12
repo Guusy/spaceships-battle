@@ -1,5 +1,5 @@
 window.joinGame = (self, goToPlay) => () => {
-    var element = self.add.dom(self.game.config.width * 0.5, 0).createFromCache('nameform');
+    var element = self.add.dom(window.innerWidth / 2, 0).createFromCache('nameform');
 
     element.addListener('click');
     element.on('click', function (event) {
