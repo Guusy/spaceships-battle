@@ -26,6 +26,7 @@ var config = {
 };
 
 
+
 new Phaser.Game(config); //const game = 
 
 var step = "SET_NAME"
