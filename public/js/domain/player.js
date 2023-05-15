@@ -42,6 +42,7 @@ window.Player = class Player extends GenericPlayer {
 
         this.game.physics.add.overlap(this.ship, this.game.meteors, (_, meteor) => this.hitByMeteor(meteor))
         this.game.physics.add.overlap(this.ship, this.game.enemiesLasers, (_, enemyLaser) => this.hitByEnemyLaser(enemyLaser));
+        this.game.physics.add.overlap(this.ship, this.game.IALasers, (_, IABullet) => this.hitByAIBullet(IABullet));
     }
 
     doUpdate(time, delta) {
@@ -202,6 +203,21 @@ window.Player = class Player extends GenericPlayer {
             room: credentials.room
         })
         enemyLaser.destroy()
+    }
+
+    hitByAIBullet(bullet){
+        const credentials = this.connectionCredentials()
+        this.game.socket.emit('playerHitted', {
+            hitter: 'bullet',
+            hitted: {
+                ...credentials
+            },
+            hitterMetadata: {
+                playerName: 'ia'
+            },
+            room: credentials.room
+        })
+        bullet.destroy()
     }
 
     slowVelocity(amount) {

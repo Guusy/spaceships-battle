@@ -45,7 +45,9 @@ window.GenericPlayer = class GenericPlayer {
         const displayPosition = this._calculateDisplayPosition(x, y)
         this.hp = new HealthBar(this.game, hpPosition.x, hpPosition.y);
         // this.dash = new HealthBar(game);
-        this.displayName = this.game.add.text(displayPosition.x, displayPosition.y, this.data.playerName)
+        const powerUpIndicator = this.hasPowerUp() ? '🍄': ''
+        console.log(powerUpIndicator)
+        this.displayName = this.game.add.text(displayPosition.x, displayPosition.y, `${this.data.playerName} ${powerUpIndicator}`)
 
         this.doRender(playerInfo)
 
@@ -57,6 +59,9 @@ window.GenericPlayer = class GenericPlayer {
         this.emitter.startFollow(this.ship);
     }
 
+    hasPowerUp(){
+        return !!this.powerup
+    }
     createAccelerationParticles() {
         this.particles = this.game.add.particles('space');
         this.emitter = this.particles.createEmitter({
@@ -110,6 +115,8 @@ window.GenericPlayer = class GenericPlayer {
     }
 
     updatePowerup() {
+        const powerUpIndicator = this.hasPowerUp() ? '🍄': ''
+        this.displayName.text = `${this.data.playerName} ${powerUpIndicator}`
         if (this.powerup && this.powerup.isActive) {
             this.powerup.update(this.game, this)
         }

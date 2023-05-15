@@ -29,7 +29,13 @@ function randomIntFromInterval(min, max) { // min and max included
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
+const colors = ['0bed07', '200ee8', 'ed2009', 'db07eb', 'f56d05']
+
+
+
+
 module.exports = {
+    colors,
     removePlayer,
     getRoomBySocket,
     randomIntFromInterval,

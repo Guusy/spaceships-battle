@@ -1,9 +1,11 @@
 const Meteor = require('./Meteor')
 const Laser = require('./Laser')
+const IABullet = require('./IABullet')
 
 const hitters = {
     'meteor': Meteor,
-    'laser': Laser
+    'laser': Laser,
+    'bullet': IABullet
 }
 
 module.exports = (key, data) => {

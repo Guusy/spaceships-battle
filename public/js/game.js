@@ -12,7 +12,7 @@ var config = {
         default: 'arcade',
         arcade: {
             debug: false,
-            gravity: { y: 0 }
+            gravity: {y: 0}
         }
     },
     scene: {
@@ -26,15 +26,14 @@ var config = {
 };
 
 
-
-new Phaser.Game(config); //const game = 
+new Phaser.Game(config); //const game =
 
 var step = "SET_NAME"
 var time = 0;
 var gameFinished = false
 let scoreboard;
 let enemies = []
-
+let IAEnemies = []
 const getPowerup = (key) => window.powerups[key]
 
 function preload() {
@@ -58,17 +57,17 @@ function create() {
         step = "PLAYING_GAME"
         console.log("start the game")
         if (props.isAdmin) {
-            this.initGameButton = this.add.text(window.innerWidth / 2, window.innerHeight * 0.7, `Start game`, { fontSize: '50px' });
-            this.initGameButton.setInteractive({ useHandCursor: true })
+            this.initGameButton = this.add.text(window.innerWidth / 2, window.innerHeight * 0.7, `Start game`, {fontSize: '50px'});
+            this.initGameButton.setInteractive({useHandCursor: true})
                 .on('pointerup', () => {
                     this.initGameButton.destroy()
                     this.socket.emit('initGame', this.player.connectionCredentials())
                 });
         }
         this.otherPlayers = this.physics.add.group();
-        this.timer = this.add.text(584, 16, "Waiting for others players", { fontSize: '32px' });
-        this.playersQuantity = this.add.text(24, 16, `Room: ${this.room}`, { fontSize: '14px' });
-        this.playersQuantity = this.add.text(24, 30, `Players: ${enemies.length + 1}`, { fontSize: '14px' });
+        this.timer = this.add.text(584, 16, "Waiting for others players", {fontSize: '32px'});
+        this.playersQuantity = this.add.text(24, 16, `Room: ${this.room}`, {fontSize: '14px'});
+        this.playersQuantity = this.add.text(24, 30, `Players: ${enemies.length + 1}`, {fontSize: '14px'});
         this.updatePlayersQuantity = () => {
             this.playersQuantity.setText(`Players: ${enemies.length + 1}`)
         }
@@ -84,7 +83,7 @@ function create() {
 
         this.latency = new Latency(this)
 
-        this.socket.emit('enterGame', { playerName: props.playerName, room: props.room })
+        this.socket.emit('enterGame', {playerName: props.playerName, room: props.room})
 
         this.socket.on('getPong', (id) => {
             this.latency.receivePong(id)
@@ -98,13 +97,15 @@ function create() {
 
         this.lasers = this.physics.add.group()
         this.enemiesLasers = this.physics.add.group()
+        this.IALasers = this.physics.add.group()
         this.meteors = this.physics.add.group()
         this.heart = new Heart(this)
         this.star = new Star(this)
         self.physics.add.overlap(self.lasers, self.meteors, destroyAll, null, self)
         self.physics.add.overlap(self.enemiesLasers, self.meteors, destroyAll, null, self)
 
-        this.renderLaser = (group, { x, y, type, color, rotation, playerName }) => {
+        this.renderLaser = (group, {x, y, type, color, rotation, playerName}) => {
+            console.log(group, {x, y, type, color, rotation, playerName})
             var laser = group.create(x, y, 'laser');
             laser.setTint(color)
             laser.rotation = rotation
@@ -115,6 +116,21 @@ function create() {
 
         this.findEnemyByName = (name) => enemies.find(enemy => enemy.data.playerName === name)
         this.findEnemyBySocket = (socketId) => enemies.find(enemy => enemy.data.playerId === socketId)
+        this.findIAEnemyBySocket = (socketID) => IAEnemies.find(enemy => enemy.data.id === socketID)
+
+        this.socket.on('renderIAEnemy', (IAEnemyData) => {
+            console.log('IA enemy rendering in the UI', IAEnemyData)
+            IAEnemy.render(this, IAEnemyData)
+        })
+
+        this.socket.on('shootLaser', ({ from, to, rotation }) => {
+            var IABullet = self.IALasers.create( from.x, from.y, 'bomb')
+
+            let vector = new Phaser.Math.Vector2( to.x - from.x, to.y - from.y );
+            setTimeout( () => IABullet.destroy(), 2000);
+            // TODO: vector.setLength(300);            // set Speed of bullet
+            IABullet.body.setVelocity(vector.x, vector.y);
+        })
 
         this.socket.on('renderMeteor', (meteor) => {
             Meteor.render(this, meteor)
@@ -173,8 +189,9 @@ function create() {
             this.star.render(starLocation)
         });
 
-        this.socket.on('playerShooted', ({ lasers }) => {
+        this.socket.on('playerShooted', ({lasers}) => {
             this.sound.play('laserSound');
+            console.log(`playerShooted`, {lasers})
             if (Array.isArray(lasers)) {
                 lasers.forEach(laser => this.renderLaser(self.enemiesLasers, laser))
             } else {
@@ -205,7 +222,7 @@ function create() {
             }
         })
 
-        this.socket.on('updateHp', ({ playerName, hp }) => {
+        this.socket.on('updateHp', ({playerName, hp}) => {
             if (this.player.isMe(playerName)) {
                 this.player.updateHp(hp)
             } else {
@@ -218,7 +235,7 @@ function create() {
             Powerup.render(this, powerup)
         })
 
-        this.socket.on('powerupCollected', ({ playerName, powerup }) => {
+        this.socket.on('powerupCollected', ({playerName, powerup}) => {
             // TODO: check if this is neccesary
             const enemy = this.findEnemyByName(playerName)
             const Powerup = getPowerup(powerup.type)
@@ -226,7 +243,7 @@ function create() {
             enemy.powerup = currentPowerup
         });
 
-        this.socket.on('powerupActivated', ({ playerName }) => { // powerup
+        this.socket.on('powerupActivated', ({playerName}) => { // powerup
             const enemy = this.findEnemyByName(playerName)
             enemy.activatePowerup()
         });
@@ -239,8 +256,8 @@ function create() {
             }
         })
     }
-    // game({ playerName: 'gonzalo', room: 'debug', isAdmin: true }) // debug mode
-    menu(self, { joinGame: joinGame(self, game), createGame: createGame(self, game) })
+    game({playerName: 'gonzalo', room: 'debug', isAdmin: true}) // debug mode
+    // menu(self, { joinGame: joinGame(self, game), createGame: createGame(self, game) })
 
 }
 
@@ -270,13 +287,16 @@ function finishGame(self) {
     const x = self.game.config.width * 0.3
     const y = self.game.config.height * 0.3
     const [winner] = sortedPlayers
-    self.add.text(x, y, 'Game finished', { fontSize: '32px', fill: 'white' });
+    self.add.text(x, y, 'Game finished', {fontSize: '32px', fill: 'white'});
     let scoreBoardLinePosition = y + 32
-    self.add.text(x, scoreBoardLinePosition, 'Winner => ' + winner.playerName, { fontSize: '28px', fill: 'white' });
+    self.add.text(x, scoreBoardLinePosition, 'Winner => ' + winner.playerName, {fontSize: '28px', fill: 'white'});
 
     sortedPlayers.forEach(aPlayer => {
         scoreBoardLinePosition += 32
-        self.add.text(x, scoreBoardLinePosition, aPlayer.playerName + ': ' + aPlayer.score, { fontSize: '24px', fill: 'white' });
+        self.add.text(x, scoreBoardLinePosition, aPlayer.playerName + ': ' + aPlayer.score, {
+            fontSize: '24px',
+            fill: 'white'
+        });
     })
 }
 
