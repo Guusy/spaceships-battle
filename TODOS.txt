@@ -22,6 +22,10 @@ Habilidades:s
     - Escudo de un golpe 
     - Dash
 
+IDEAS 2023
+- Modos de juego
+    - Por vidas
+    - Por tiempo
 
 DONE:
 - Configuracion de la partida, cantidad de tiempo, cantidad de jugadores. V

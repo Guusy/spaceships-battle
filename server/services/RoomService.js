@@ -17,7 +17,6 @@ class RoomService {
      * @return {Room}
      */
     getRoom(roomKey) {
-        console.log(this.rooms)
         const room = this.rooms[roomKey];
         if (!room) {
             LoggerService.error({

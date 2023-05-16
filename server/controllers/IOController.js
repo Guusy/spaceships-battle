@@ -15,14 +15,14 @@ module.exports = (socket) => {
     const {io} = SocketService
     SocketService.addSocket(socket)
 
+    // Games routes
     socket.on('createGame', GameController.createGame)
 
     socket.on('initGame', GameController.initGame)
 
-    socket.on('playerMovement', PlayerController.playerMovement);
-
     // User enter into the game
     socket.on('enterGame', ({playerName, room}) => {
+        //TODO: why i cant refactor this, related to `this` inside the class
         // create a new player and add it to our players object
         const {newPlayer, roomObject} = GameController.enterGame({
             playerName,
@@ -39,57 +39,33 @@ module.exports = (socket) => {
         socket.in(room).emit('newPlayer', newPlayer);
     })
 
+    // Player routes
+    socket.on('playerMovement', PlayerController.playerMovement);
+    socket.on('shoot', PlayerController.shoot);
+    socket.on('starCollected', PlayerController.collectStart);
+    socket.on('heartCollected', PlayerController.collectHeart);
+    socket.on('powerupCollected', PlayerController.collectPowerUp);
+    socket.on('powerupActivated', PlayerController.activatePowerUp);
+    socket.on('playerHitted', PlayerController.hit)
 
+
+
+
+    // Helpers routes
     socket.on('sendPing', (id) => {
         socket.emit('getPong', id)
     })
 
 
-    socket.on('shoot', function ({room, lasers}) {
-        socket.to(room).emit('playerShooted', {lasers});
-    });
 
-    socket.on('starCollected', function ({playerName, room}) {
-        const roomObject = RoomService.getRoom(room)
-        roomObject.updatePlayer(playerName, (player) => {
-            player.score += 50
-        })
-        const star = new Star()
-        io.emit('starLocation', star);
-        io.emit('scoreUpdate', roomObject.getScores());
-    });
 
-    socket.on('heartCollected', function ({playerName, room}) {
-        const roomObject = RoomService.getRoom(room)
-        const currentPlayer = roomObject.getPlayer(playerName)
-        const heart = new Heart()
-        currentPlayer.collect(heart)
 
-        io.emit('heartLocation', heart);
-        io.in(room).emit('updateHp', {playerName: playerName, hp: currentPlayer.hp});
-    });
 
-    socket.on('powerupCollected', function ({playerName, room, powerup}) {
-        const powerUp = new Powerup()
-        socket.to(room).emit('powerupCollected', {playerName, powerup})
-        io.in(room).emit('renderPowerup', powerUp);
-    });
 
-    socket.on('powerupActivated', function ({playerName, room, powerup}) {
-        socket.to(room).emit('powerupActivated', {playerName, powerup})
-    });
-
-    socket.on('playerHitted', ({hitted, hitter, hitterMetadata, room}) => {
-        const currentRoom = RoomService.getRoom(room)
-        const currentPlayer = currentRoom.getPlayer(hitted.playerName)
-        const currentHitter = HitterMapper(hitter, {hitter: hitterMetadata, hitted: currentPlayer})
-        if (!currentPlayer.isDead()) {
-            currentRoom.hitPlayerWith({playerName: hitted.playerName, hitter: currentHitter})
-        }
-    })
 
     // Disconnect action
     socket.on('disconnect', function () {
+        //TODO: move to controller
         console.log('user disconnected', socket.id);
         // remove this player from our players object
         //TODO: refactor this logic of rooms

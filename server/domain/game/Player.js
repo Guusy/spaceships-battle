@@ -37,6 +37,10 @@ class Player {
         this.score = (newScore >= 0) ? newScore : 0
     }
 
+    increaseScore(amount){
+        this.score += amount
+    }
+
     collect(collectable) {
         collectable.applyModification(this)
     }
