@@ -1,6 +1,6 @@
 class Player {
 
-    constructor({ playerName, room, playerId, color }) {
+    constructor({playerName, room, playerId, color}) {
         this.playerId = playerId
         this.playerName = playerName
         this.room = room
@@ -39,6 +39,15 @@ class Player {
 
     collect(collectable) {
         collectable.applyModification(this)
+    }
+
+    updatePosition({x, y, rotation, acceleration, velocity, maxSpeed}) {
+        this.x = x;
+        this.y = y;
+        this.rotation = rotation;
+        this.acceleration = acceleration;
+        this.velocity = velocity;
+        this.maxSpeed = maxSpeed;
     }
 }
 

@@ -1,6 +1,7 @@
 class IAEnemy {
   constructor({ room }) {
     console.log("IAEnemy builded on the server");
+    this.hp = 100
     this.x = Math.floor(Math.random() * 700) + 50;
     this.y = Math.floor(Math.random() * 500) + 50;
 

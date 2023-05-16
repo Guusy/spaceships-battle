@@ -6,7 +6,7 @@ const ioGame = require('./socket/ioGame')
 // const reload = require('reload');
 const game = ioGame(server)
 
-app.use(express.static(__dirname + '/../public'));
+app.use(express.static(__dirname + '/../client'));
 
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
